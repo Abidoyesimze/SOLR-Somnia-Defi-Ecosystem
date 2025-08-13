@@ -1,0 +1,292 @@
+/* app/globals.css - Tailwind v4 Configuration */
+@import "tailwindcss";
+
+/* Custom Theme Configuration for Tailwind v4 */
+@theme {
+  /* Color Palette */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-900: #1e3a8a;
+  
+  --color-gray-850: #1f2937;
+  --color-gray-950: #0f1419;
+  
+  /* Custom Animations */
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-ring: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+  --animate-fade-in-up: fadeInUp 0.8s ease-out forwards;
+  --animate-slide-up: slideUp 0.3s ease-out;
+  --animate-bounce-gentle: bounceGentle 2s infinite;
+  
+  /* Animation Keyframes */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+  
+  @keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 1; }
+    80%, 100% { transform: scale(1.2); opacity: 0; }
+  }
+  
+  @keyframes fadeInUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes slideUp {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  
+  @keyframes bounceGentle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  /* Custom Spacing */
+  --spacing-18: 4.5rem;
+  --spacing-72: 18rem;
+  --spacing-84: 21rem;
+  --spacing-96: 24rem;
+}
+
+/* Base Styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+/* Component Styles */
+@layer components {
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent;
+  }
+  
+  .gradient-border {
+    @apply bg-gradient-to-r from-blue-500 to-purple-600 p-[1px] rounded-2xl;
+  }
+  
+  .gradient-border-inner {
+    @apply bg-gray-900 rounded-2xl;
+  }
+  
+  .card-glow {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+  }
+  
+  .token-selector {
+    @apply flex items-center bg-gray-800/50 hover:bg-gray-700/50 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer border border-transparent hover:border-blue-500/30;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 140px;
+  }
+  
+  .token-selector .token-icon {
+    @apply w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+  }
+  
+  .token-selector .token-symbol {
+    @apply font-medium text-white;
+    flex-shrink: 0;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .token-selector .chevron {
+    @apply w-4 h-4 text-gray-400;
+    flex-shrink: 0;
+    margin-left: auto;
+    width: 16px;
+    height: 16px;
+  }
+  
+  .swap-input {
+    @apply bg-transparent text-2xl font-medium outline-none flex-1 placeholder-gray-500;
+    min-width: 0;
+    padding: 8px 0;
+  }
+  
+  .swap-input:focus {
+    outline: none;
+    border: none;
+  }
+  
+  .swap-input::-webkit-outer-spin-button,
+  .swap-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  
+  .swap-input[type=number] {
+    -moz-appearance: textfield;
+  }
+  
+  .route-path {
+    @apply flex items-center space-x-2 p-3 bg-blue-900/20 rounded-lg border border-blue-500/30;
+  }
+  
+  .protocol-icon {
+    @apply w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold;
+  }
+  
+  .nav-link {
+    @apply text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer;
+  }
+  
+  .btn-primary {
+    @apply bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+  }
+  
+  .btn-secondary {
+    @apply border border-gray-600 hover:border-gray-500 px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:bg-gray-800;
+  }
+  
+  .stat-card {
+    @apply bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-6 transition-all duration-300 hover:border-blue-500/50;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+  }
+  
+  .stat-card:hover {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.25);
+  }
+  
+  .feature-card {
+    @apply bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-8 transition-all duration-300 hover:border-blue-500/50 hover:transform hover:scale-105;
+  }
+  
+  .balance-display {
+    @apply text-sm text-gray-400;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  
+  .balance-amount {
+    @apply text-white;
+    font-weight: 500;
+  }
+  
+  .swap-input-container {
+    @apply flex items-center justify-between;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .max-button {
+    @apply text-xs bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded transition-colors;
+    flex-shrink: 0;
+    font-weight: 500;
+    min-width: 40px;
+    text-align: center;
+  }
+  
+  .swap-section {
+    @apply bg-gray-800/50 rounded-xl p-4;
+    border: 1px solid rgba(75, 85, 99, 0.3);
+  }
+  
+  .swap-section:hover {
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+  
+  /* RainbowKit Custom Styling */
+  :root {
+    --rk-connect-button-background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+    --rk-connect-button-background-hover: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
+    --rk-connect-button-border-radius: 12px;
+    --rk-connect-button-font-weight: 600;
+    --rk-connect-button-padding: 12px 24px;
+  }
+  
+  .rainbow-kit-connect-button {
+    background: var(--rk-connect-button-background) !important;
+    border-radius: var(--rk-connect-button-border-radius) !important;
+    font-weight: var(--rk-connect-button-font-weight) !important;
+    padding: var(--rk-connect-button-padding) !important;
+    transition: all 0.2s ease-in-out !important;
+  }
+  
+  .rainbow-kit-connect-button:hover {
+    background: var(--rk-connect-button-background-hover) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+  }
+  
+  /* Dark theme overrides for RainbowKit */
+  [data-rk] {
+    --rk-colors-accentColor: #3B82F6;
+    --rk-colors-accentColorForeground: #FFFFFF;
+    --rk-colors-actionButtonBorder: rgba(255, 255, 255, 0.1);
+    --rk-colors-actionButtonSecondaryBackground: rgba(255, 255, 255, 0.05);
+    --rk-colors-connectButtonBackground: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+    --rk-colors-connectButtonBackgroundError: #EF4444;
+    --rk-colors-connectButtonInnerBackground: transparent;
+    --rk-colors-connectButtonText: #FFFFFF;
+    --rk-colors-connectButtonTextError: #FFFFFF;
+    --rk-colors-connectionIndicator: #10B981;
+    --rk-colors-error: #EF4444;
+    --rk-colors-loading: #3B82F6;
+    --rk-colors-modalBackdrop: rgba(0, 0, 0, 0.5);
+    --rk-colors-modalBackground: #1F2937;
+    --rk-colors-modalBorder: rgba(255, 255, 255, 0.1);
+    --rk-colors-modalText: #FFFFFF;
+    --rk-colors-modalTextSecondary: #9CA3AF;
+    --rk-colors-profileAction: rgba(255, 255, 255, 0.1);
+    --rk-colors-profileActionHover: rgba(255, 255, 255, 0.15);
+    --rk-colors-profileForeground: rgba(255, 255, 255, 0.05);
+    --rk-colors-profileSecondary: rgba(255, 255, 255, 0.1);
+    --rk-colors-profileSecondaryHover: rgba(255, 255, 255, 0.15);
+    --rk-colors-profileText: #FFFFFF;
+    --rk-colors-profileTextSecondary: #9CA3AF;
+    --rk-colors-selectedOption: rgba(59, 130, 246, 0.1);
+    --rk-colors-standby: #F59E0B;
+  }
+}
+
+/* Utility Classes */
+@layer utilities {
+  .animate-delay-100 {
+    animation-delay: 0.1s;
+  }
+  
+  .animate-delay-200 {
+    animation-delay: 0.2s;
+  }
+  
+  .animate-delay-300 {
+    animation-delay: 0.3s;
+  }
+  
+  .animate-delay-500 {
+    animation-delay: 0.5s;
+  }
+  
+  .floating-animation {
+    animation: var(--animate-float);
+  }
+  
+  .pulse-ring {
+    animation: var(--animate-pulse-ring);
+  }
+  
+  .fade-in-up {
+    animation: var(--animate-fade-in-up);
+    opacity: 0;
+    transform: translateY(30px);
+  }
+}
