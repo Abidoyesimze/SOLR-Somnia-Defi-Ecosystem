@@ -100,7 +100,7 @@ const LandingPage = () => {
               variants={fadeInUp}
             >
               The <span className="gradient-text">Universal</span><br />
-              Liquidity Router for<br />
+              Asset Router for<br />
               <span className="gradient-text">Somnia</span>
             </motion.h1>
             
@@ -108,8 +108,8 @@ const LandingPage = () => {
               className="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed"
               variants={fadeInUp}
             >
-              Aggregate liquidity across all Somnia DEXs. Get the best prices, lowest slippage, 
-              and instant settlement — all fully on-chain.
+              Route virtual assets and experiences across Somnia's SOM0 and SOM1 protocols. 
+              Enable cross-metaverse interoperability and composable virtual worlds.
             </motion.p>
             
             <motion.div 
@@ -372,9 +372,9 @@ const LandingPage = () => {
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-6">Integrated Protocols</h2>
+            <h2 className="text-4xl font-bold mb-6">Somnia Protocols</h2>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              SOLR aggregates liquidity from all major DEXs on Somnia for optimal price execution
+              SOLR integrates with Somnia's core protocols for seamless asset routing and virtual world composition
             </p>
           </motion.div>
           
@@ -386,34 +386,29 @@ const LandingPage = () => {
             viewport={{ once: true }}
           >
             {PROTOCOLS.map((protocol, index) => (
-              <motion.div 
+              <motion.div
                 key={protocol.name}
-                className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-6 hover:border-blue-500/50 transition-all duration-300"
+                className={`${protocol.color} rounded-xl p-6 text-white`}
                 variants={fadeInUp}
+                transition={{ delay: index * 0.1 }}
               >
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className={`w-12 h-12 ${protocol.color} rounded-xl flex items-center justify-center text-white font-bold text-lg`}>
-                    {protocol.icon}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">{protocol.name}</h3>
-                    <p className="text-sm text-gray-400">{protocol.type}</p>
-                  </div>
+                <div className="text-4xl mb-4">{protocol.icon}</div>
+                <h3 className="text-xl font-semibold mb-2">{protocol.name}</h3>
+                <p className="text-sm opacity-90 mb-4">{protocol.description}</p>
+                <div className="space-y-2">
+                  {protocol.features.map((feature, featureIndex) => (
+                    <div key={featureIndex} className="flex items-center space-x-2 text-sm">
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                      <span>{feature}</span>
+                    </div>
+                  ))}
                 </div>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">TVL:</span>
-                    <span>${formatNumber(protocol.tvl / 1000000, 1)}M</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">24h Volume:</span>
-                    <span>${formatNumber(protocol.volume24h / 1000, 1)}K</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Pools:</span>
-                    <span>{protocol.pools}</span>
-                  </div>
+                <div className="mt-4">
+                  <span className={`px-3 py-1 rounded-full text-xs ${
+                    protocol.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
+                  }`}>
+                    {protocol.status}
+                  </span>
                 </div>
               </motion.div>
             ))}

@@ -25,7 +25,7 @@ const somniaChain = {
 }
 
 const config = getDefaultConfig({
-  appName: 'SOLR - Somnia Universal Liquidity Router',
+  appName: 'SOLR - Somnia Asset & Experience Router',
   projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'default',
   chains: [somniaChain],
   ssr: true,

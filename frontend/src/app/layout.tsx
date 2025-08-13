@@ -6,9 +6,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'SOLR - Somnia Universal Liquidity Router',
-  description: 'Aggregate liquidity across all Somnia DEXs. Get the best prices, lowest slippage, and instant settlement.',
-  keywords: 'DeFi, Somnia, Liquidity, DEX, Aggregator, Swap, Trading',
+  title: 'SOLR - Somnia Asset & Experience Router',
+  description: 'Route virtual assets and experiences across Somnia\'s SOM0 and SOM1 protocols. Enable cross-metaverse interoperability and composable virtual worlds.',
+  keywords: 'Somnia, Virtual Assets, Metaverse, Interoperability, SOM0, SOM1, Asset Routing, Virtual Worlds',
 }
 
 export default function RootLayout({

@@ -25,23 +25,14 @@ module.exports = {
       timeout: 1800000,
     },
     
-    // Somnia Devnet Configuration
-    somniaDevnet: {
-      url: "https://somnia-devnet.alt.technology/",
-      chainId: 50311,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      gas: 2100000,
-      gasPrice: 8000000000,
-      timeout: 60000,
-    },
-    
-    // Somnia Testnet (when available)
+    // Somnia Testnet Configuration
     somniaTestnet: {
-      url: process.env.SOMNIA_TESTNET_RPC || "https://somnia-testnet-rpc.alt.technology/",
+      url: process.env.SOMNIA_TESTNET_RPC || "https://testnet-rpc.somnia.network",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       gas: 2100000,
       gasPrice: 8000000000,
       timeout: 60000,
+      chainId: 50312,
     },
     
     // Local development
@@ -77,15 +68,15 @@ module.exports = {
   // Etherscan verification (for block explorers)
   etherscan: {
     apiKey: {
-      somniaDevnet: process.env.SOMNIA_API_KEY || "dummy",
+      somniaTestnet: process.env.SOMNIA_API_KEY || "dummy",
     },
     customChains: [
       {
-        network: "somniaDevnet",
-        chainId: 50311,
+        network: "somniaTestnet",
+        chainId: 50312,
         urls: {
-          apiURL: "https://somnia-devnet-explorer.alt.technology/api",
-          browserURL: "https://somnia-devnet-explorer.alt.technology/"
+          apiURL: "https://testnet-explorer.somnia.network/api",
+          browserURL: "https://testnet-explorer.somnia.network/"
         }
       }
     ]
