@@ -1,22 +1,28 @@
 'use client'
 
-import React, { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import Link from 'next/link'
+import { useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { motion } from 'framer-motion'
+import { ConnectButton, useAccount } from 'wagmi'
 import { 
   Menu, 
   X, 
-  ExternalLink, 
-  BarChart3, 
-  Code, 
-  Zap,
-  ChevronDown,
-  Wifi,
-  WifiOff
+  Globe,
+  Palette,
+  Gamepad2,
+  Users,
+  BarChart3,
+  BookOpen
 } from 'lucide-react'
-import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount } from 'wagmi'
+
+const navigation = [
+  { name: 'Home', href: '/', icon: Globe },
+  { name: 'Asset Router', href: '/router', icon: Palette },
+  { name: 'Metaverses', href: '/metaverses', icon: Gamepad2 },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Community', href: '/community', icon: Users },
+  { name: 'Documentation', href: '/docs', icon: BookOpen }
+]
 
 // Custom ConnectButton wrapper for better styling
 const CustomConnectButton = () => {
@@ -99,216 +105,95 @@ const CustomConnectButton = () => {
   )
 }
 
-const Header = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isNetworkDropdownOpen, setIsNetworkDropdownOpen] = useState(false)
+export default function Header() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
 
-  const navigation = [
-    { name: 'Swap', href: '/swap', icon: Zap },
-    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-    { name: 'Developer', href: '/developer', icon: Code },
-  ]
-
-  const networks = [
-    {
-      name: 'Somnia Testnet',
-      chainId: 50312,
-      status: 'connected',
-      rpc: 'https://testnet-rpc.somnia.network',
-      explorer: 'https://testnet-explorer.somnia.network'
-    }
-  ]
-
-  const currentNetwork = networks[0] // For now, only Somnia Testnet
-
   return (
-    <motion.nav 
-      className="fixed top-0 w-full z-50 bg-gray-900/90 backdrop-blur-xl border-b border-gray-800"
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="bg-gray-900/80 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3 group">
-            <motion.div 
-              className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center"
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              transition={{ type: "spring", stiffness: 400 }}
-            >
-              <span className="text-white font-bold text-sm">S</span>
-            </motion.div>
-            <span className="text-xl font-semibold group-hover:text-blue-400 transition-colors">
-              SOLR
-            </span>
-            <span className="text-xs bg-blue-600 text-blue-100 px-2 py-1 rounded-full">
-              Beta
-            </span>
-          </Link>
-          
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <Globe className="w-6 h-6 text-white" />
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="text-xl font-bold text-white">SOLR</h1>
+              <p className="text-xs text-gray-400">Somnia Asset Router</p>
+            </div>
+          </div>
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navigation.map((item) => {
-              const Icon = item.icon
               const isActive = pathname === item.href
-              
               return (
-                <Link
+                <a
                   key={item.name}
                   href={item.href}
-                  className={`nav-link flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 ${
-                    isActive 
-                      ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' 
-                      : 'hover:bg-gray-800'
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'text-blue-400 bg-blue-500/10 border border-blue-500/20'
+                      : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <item.icon className="w-4 h-4" />
                   <span>{item.name}</span>
-                </Link>
+                </a>
               )
             })}
           </div>
-          
-          {/* Network & Wallet Section */}
-          <div className="hidden md:flex items-center space-x-4">
-            {/* Network Selector */}
-            <div className="relative">
-              <button
-                onClick={() => setIsNetworkDropdownOpen(!isNetworkDropdownOpen)}
-                className="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 rounded-lg px-3 py-2 transition-all duration-200"
-              >
-                <div className={`w-2 h-2 rounded-full ${
-                  currentNetwork.status === 'connected' ? 'bg-green-400' : 'bg-red-400'
-                }`} />
-                <span className="text-sm text-gray-300">{currentNetwork.name}</span>
-                <ChevronDown className="w-4 h-4 text-gray-400" />
-              </button>
-              
-              <AnimatePresence>
-                {isNetworkDropdownOpen && (
-                  <motion.div 
-                    className="absolute right-0 mt-2 w-64 bg-gray-800 border border-gray-700 rounded-xl shadow-lg overflow-hidden"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {networks.map((network) => (
-                      <div key={network.chainId} className="p-4 hover:bg-gray-700/50 transition-colors">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium">{network.name}</span>
-                          <div className="flex items-center space-x-1">
-                            {network.status === 'connected' ? (
-                              <Wifi className="w-4 h-4 text-green-400" />
-                            ) : (
-                              <WifiOff className="w-4 h-4 text-red-400" />
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-xs text-gray-400 space-y-1">
-                          <div>Chain ID: {network.chainId}</div>
-                          <div className="flex items-center space-x-2">
-                            <span>Explorer</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            
-            {/* Gas Tracker */}
-            <div className="text-sm text-gray-400 hidden lg:block">
-              Gas: <span className="text-green-400">~0.001 SOM</span>
-            </div>
-            
-            {/* Wallet Connection */}
+
+          {/* Wallet Connection */}
+          <div className="flex items-center space-x-4">
             <CustomConnectButton />
+            
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors"
+            >
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
           </div>
-          
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 hover:bg-gray-800 rounded-lg transition-colors"
-          >
-            {isMobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
-          </button>
         </div>
-      </div>
-      
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div 
-            className="md:hidden bg-gray-800 border-t border-gray-700"
+
+        {/* Mobile Navigation */}
+        {mobileMenuOpen && (
+          <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
+            className="md:hidden border-t border-gray-800"
           >
-            <div className="px-4 py-6 space-y-4">
-              {/* Mobile Navigation */}
+            <div className="px-2 pt-2 pb-3 space-y-1">
               {navigation.map((item) => {
-                const Icon = item.icon
                 const isActive = pathname === item.href
-                
                 return (
-                  <Link
+                  <a
                     key={item.name}
                     href={item.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                      isActive 
-                        ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' 
-                        : 'hover:bg-gray-700'
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'text-blue-400 bg-blue-500/10 border border-blue-500/20'
+                        : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
                     }`}
+                    onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.name}</span>
-                  </Link>
+                    <item.icon className="w-5 h-5" />
+                    <span>{item.name}</span>
+                  </a>
                 )
               })}
-              
-              {/* Mobile Network Info */}
-              <div className="px-4 py-3 bg-gray-700/50 rounded-lg">
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className={`w-2 h-2 rounded-full ${
-                    currentNetwork.status === 'connected' ? 'bg-green-400' : 'bg-red-400'
-                  }`} />
-                  <span className="text-sm font-medium">{currentNetwork.name}</span>
-                </div>
-                <div className="text-xs text-gray-400">
-                  Gas: <span className="text-green-400">~0.001 SOM</span>
-                </div>
-              </div>
-              
-              {/* Mobile Wallet Connection */}
-              <CustomConnectButton />
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
-      
-      {/* Click outside to close dropdowns */}
-      {(isNetworkDropdownOpen || isMobileMenuOpen) && (
-        <div 
-          className="fixed inset-0 z-40"
-          onClick={() => {
-            setIsNetworkDropdownOpen(false)
-            setIsMobileMenuOpen(false)
-          }}
-        />
-      )}
-    </motion.nav>
+      </nav>
+    </header>
   )
 }
-
-export default Header
