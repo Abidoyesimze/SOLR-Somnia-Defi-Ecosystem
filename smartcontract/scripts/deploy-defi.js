@@ -2,7 +2,7 @@ const { ethers } = require("hardhat");
 
 async function main() {
   console.log("🚀 Deploying Somnia DeFi Ecosystem...");
-  
+
   const [deployer] = await ethers.getSigners();
   console.log("📝 Deploying contracts with account:", deployer.address);
   console.log("💰 Account balance:", (await deployer.getBalance()).toString());
@@ -60,8 +60,8 @@ async function main() {
   await staking.addStakingTier(
     governanceToken.address,
     "Bronze",
-    ethers.utils.parseEther("1000"), // 1000 tokens min
-    ethers.utils.parseEther("10000"), // 10000 tokens max
+    BigInt("1000000000000000000000"), // 1000 tokens min
+    BigInt("10000000000000000000000"), // 10000 tokens max
     10000, // 1x multiplier
     30 * 24 * 60 * 60, // 30 day lock
     500 // 5% penalty
@@ -70,8 +70,8 @@ async function main() {
   await staking.addStakingTier(
     governanceToken.address,
     "Silver",
-    ethers.utils.parseEther("10000"), // 10000 tokens min
-    ethers.utils.parseEther("100000"), // 100000 tokens max
+    BigInt("10000000000000000000000"), // 10000 tokens min
+    BigInt("100000000000000000000000"), // 100000 tokens max
     12000, // 1.2x multiplier
     90 * 24 * 60 * 60, // 90 day lock
     300 // 3% penalty
@@ -80,8 +80,8 @@ async function main() {
   await staking.addStakingTier(
     governanceToken.address,
     "Gold",
-    ethers.utils.parseEther("100000"), // 100000 tokens min
-    ethers.utils.parseEther("1000000"), // 1M tokens max
+    BigInt("100000000000000000000000"), // 100000 tokens min
+    BigInt("1000000000000000000000000"), // 1M tokens max
     15000, // 1.5x multiplier
     180 * 24 * 60 * 60, // 180 day lock
     200 // 2% penalty
@@ -96,21 +96,21 @@ async function main() {
 
   // Transfer some governance tokens to protocols for initial liquidity
   console.log("💸 Funding protocols with initial governance tokens...");
-  const initialFunding = ethers.utils.parseEther("1000000"); // 1M tokens
-  
+  const initialFunding = BigInt("1000000000000000000000000"); // 1M tokens
+
   await governanceToken.transfer(amm.address, initialFunding);
   await governanceToken.transfer(lending.address, initialFunding);
   await governanceToken.transfer(staking.address, initialFunding);
 
   console.log("\n🎉 Deployment Complete!");
-  console.log("=" .repeat(50));
+  console.log("=".repeat(50));
   console.log("📋 Contract Addresses:");
   console.log("🏛️  SomniaGovernance:", governanceToken.address);
   console.log("🔄 SomniaAMM:", amm.address);
   console.log("🏦 SomniaLending:", lending.address);
   console.log("💰 SomniaStaking:", staking.address);
-  console.log("=" .repeat(50));
-  
+  console.log("=".repeat(50));
+
   console.log("\n🔗 Next Steps:");
   console.log("1. Verify contracts on Somnia Explorer");
   console.log("2. Test basic functionality");
@@ -133,13 +133,13 @@ async function main() {
       stakingPoolCreated: true,
       stakingTiersAdded: 3,
       lendingMarketCreated: true,
-      initialFunding: ethers.utils.formatEther(initialFunding) + " SOMG"
+      initialFunding: "1000000 SOMG"
     }
   };
 
   console.log("\n💾 Deployment info saved to deployment-info.json");
   require('fs').writeFileSync(
-    'deployment-info.json', 
+    'deployment-info.json',
     JSON.stringify(deploymentInfo, null, 2)
   );
 }
