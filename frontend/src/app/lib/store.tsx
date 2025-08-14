@@ -1,120 +1,172 @@
 import { create } from 'zustand'
+import { SwapRoute } from './types'
 
-// Updated store for metaverse asset routing
-interface MetaverseRoutingState {
-  // Asset selection
-  fromAsset: string
-  toAsset: string
-  fromMetaverse: string
-  toMetaverse: string
+// DeFi Application State
+interface DeFiState {
+  // Trading State
+  fromToken: string
+  toToken: string
+  fromAmount: string
+  toAmount: string
+  slippage: number
+  isSwapping: boolean
   
-  // Amount and routing
-  assetAmount: string
-  route: AssetRoute | null
+  // Lending State
+  selectedLendingMarket: string
+  supplyAmount: string
+  borrowAmount: string
+  isSupplying: boolean
+  isBorrowing: boolean
+  
+  // Staking State
+  selectedStakingPool: string
+  stakeAmount: string
+  selectedTier: number
+  isStaking: boolean
+  isUnstaking: boolean
+  
+  // Governance State
+  selectedProposal: number | null
+  voteAmount: string
+  isVoting: boolean
+  
+  // General State
   loading: boolean
-  routing: boolean
-  
-  // Destination selection
-  selectedDestination: string
-  
-  // Settings
-  autoRefresh: boolean
-  lastRefresh: Date | null
+  error: string | null
+  lastUpdate: Date | null
   
   // Actions
-  setFromAsset: (asset: string) => void
-  setToAsset: (asset: string) => void
-  setFromMetaverse: (metaverse: string) => void
-  setToMetaverse: (metaverse: string) => void
-  setAssetAmount: (amount: string) => void
-  setRoute: (route: AssetRoute | null) => void
-  setLoading: (loading: boolean) => void
-  setRouting: (routing: boolean) => void
-  setSelectedDestination: (destination: string) => void
-  setAutoRefresh: (autoRefresh: boolean) => void
-  setLastRefresh: (date: Date | null) => void
+  setFromToken: (token: string) => void
+  setToToken: (token: string) => void
+  setFromAmount: (amount: string) => void
+  setToAmount: (amount: string) => void
+  setSlippage: (slippage: number) => void
+  setSwapRoute: (route: SwapRoute | null) => void
+  setIsSwapping: (swapping: boolean) => void
   
-  // Utility actions
-  swapAssets: () => void
-  clearRoute: () => void
+  setSelectedLendingMarket: (market: string) => void
+  setSupplyAmount: (amount: string) => void
+  setBorrowAmount: (amount: string) => void
+  setIsSupplying: (supplying: boolean) => void
+  setIsBorrowing: (borrowing: boolean) => void
+  
+  setSelectedStakingPool: (pool: string) => void
+  setStakeAmount: (amount: string) => void
+  setSelectedTier: (tier: number) => void
+  setIsStaking: (staking: boolean) => void
+  setIsUnstaking: (unstaking: boolean) => void
+  
+  setSelectedProposal: (proposal: number | null) => void
+  setVoteAmount: (amount: string) => void
+  setIsVoting: (voting: boolean) => void
+  
+  setLoading: (loading: boolean) => void
+  setError: (error: string | null) => void
+  setLastUpdate: (date: Date) => void
+  
+  // Utility Actions
+  swapTokens: () => void
+  clearError: () => void
   resetState: () => void
 }
 
-// Asset Route interface (simplified for store)
-interface AssetRoute {
-  from: string
-  to: string
-  amount: string
-  estimatedOutput: string
-  routingFee: string
-  gasEstimate: string
-  routePath: RouteStep[]
-  estimatedTime: string
-  successRate: string
-  savings: string
-}
-
-interface RouteStep {
-  step: number
-  from: string
-  to: string
-  protocol: string
-}
-
-export const useStore = create<MetaverseRoutingState>((set, get) => ({
+export const useStore = create<DeFiState>((set, get) => ({
   // Initial state
-  fromAsset: '',
-  toAsset: '',
-  fromMetaverse: '',
-  toMetaverse: '',
-  assetAmount: '',
-  route: null,
+  fromToken: 'SOM',
+  toToken: 'SOMG',
+  fromAmount: '',
+  toAmount: '',
+  slippage: 0.5,
+  isSwapping: false,
+  
+  selectedLendingMarket: '',
+  supplyAmount: '',
+  borrowAmount: '',
+  isSupplying: false,
+  isBorrowing: false,
+  
+  selectedStakingPool: '',
+  stakeAmount: '',
+  selectedTier: 0,
+  isStaking: false,
+  isUnstaking: false,
+  
+  selectedProposal: null,
+  voteAmount: '',
+  isVoting: false,
+  
   loading: false,
-  routing: false,
-  selectedDestination: '',
-  autoRefresh: true,
-  lastRefresh: null,
-
+  error: null,
+  lastUpdate: null,
+  
   // Actions
-  setFromAsset: (asset: string) => set({ fromAsset: asset }),
-  setToAsset: (asset: string) => set({ toAsset: asset }),
-  setFromMetaverse: (metaverse: string) => set({ fromMetaverse: metaverse }),
-  setToMetaverse: (metaverse: string) => set({ toMetaverse: metaverse }),
-  setAssetAmount: (amount: string) => set({ assetAmount: amount }),
-  setRoute: (route: AssetRoute | null) => set({ route }),
+  setFromToken: (token: string) => set({ fromToken: token }),
+  setToToken: (token: string) => set({ toToken: token }),
+  setFromAmount: (amount: string) => set({ fromAmount: amount }),
+  setToAmount: (amount: string) => set({ toAmount: amount }),
+  setSlippage: (slippage: number) => set({ slippage }),
+  setSwapRoute: (route: SwapRoute | null) => set({ toAmount: route?.amountOut || '' }),
+  setIsSwapping: (swapping: boolean) => set({ isSwapping: swapping }),
+  
+  setSelectedLendingMarket: (market: string) => set({ selectedLendingMarket: market }),
+  setSupplyAmount: (amount: string) => set({ supplyAmount: amount }),
+  setBorrowAmount: (amount: string) => set({ borrowAmount: amount }),
+  setIsSupplying: (supplying: boolean) => set({ isSupplying: supplying }),
+  setIsBorrowing: (borrowing: boolean) => set({ isBorrowing: borrowing }),
+  
+  setSelectedStakingPool: (pool: string) => set({ selectedStakingPool: pool }),
+  setStakeAmount: (amount: string) => set({ stakeAmount: amount }),
+  setSelectedTier: (tier: number) => set({ selectedTier: tier }),
+  setIsStaking: (staking: boolean) => set({ isStaking: staking }),
+  setIsUnstaking: (unstaking: boolean) => set({ isUnstaking: unstaking }),
+  
+  setSelectedProposal: (proposal: number | null) => set({ selectedProposal: proposal }),
+  setVoteAmount: (amount: string) => set({ voteAmount: amount }),
+  setIsVoting: (voting: boolean) => set({ isVoting: voting }),
+  
   setLoading: (loading: boolean) => set({ loading }),
-  setRouting: (routing: boolean) => set({ routing }),
-  setSelectedDestination: (destination: string) => set({ selectedDestination: destination }),
-  setAutoRefresh: (autoRefresh: boolean) => set({ autoRefresh }),
-  setLastRefresh: (date: Date | null) => set({ lastRefresh: date }),
-
+  setError: (error: string | null) => set({ error }),
+  setLastUpdate: (date: Date) => set({ lastUpdate: date }),
+  
   // Utility actions
-  swapAssets: () => {
-    const { fromAsset, toAsset, fromMetaverse, toMetaverse } = get()
+  swapTokens: () => {
+    const { fromToken, toToken, fromAmount, toAmount } = get()
     set({
-      fromAsset: toAsset,
-      toAsset: fromAsset,
-      fromMetaverse: toMetaverse,
-      toMetaverse: fromMetaverse
+      fromToken: toToken,
+      toToken: fromToken,
+      fromAmount: toAmount,
+      toAmount: fromAmount
     })
   },
-
-  clearRoute: () => set({ route: null }),
-
+  
+  clearError: () => set({ error: null }),
+  
   resetState: () => set({
-    fromAsset: '',
-    toAsset: '',
-    fromMetaverse: '',
-    toMetaverse: '',
-    assetAmount: '',
-    route: null,
+    fromToken: 'SOM',
+    toToken: 'SOMG',
+    fromAmount: '',
+    toAmount: '',
+    slippage: 0.5,
+    isSwapping: false,
+    selectedLendingMarket: '',
+    supplyAmount: '',
+    borrowAmount: '',
+    isSupplying: false,
+    isBorrowing: false,
+    selectedStakingPool: '',
+    stakeAmount: '',
+    selectedTier: 0,
+    isStaking: false,
+    isUnstaking: false,
+    selectedProposal: null,
+    voteAmount: '',
+    isVoting: false,
     loading: false,
-    routing: false,
-    selectedDestination: '',
-    lastRefresh: null
+    error: null,
+    lastUpdate: null
   })
 }))
 
-// Legacy compatibility exports (for existing components)
+// Legacy compatibility exports
 export const useSwapStore = useStore
-export const useMetaverseStore = useStore
+export const useDeFiStore = useStore

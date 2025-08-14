@@ -2,38 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Settings, 
-  ArrowDown, 
-  RefreshCw,
-  Globe,
-  Shield,
-  Zap,
-  Palette,
-  Gamepad2
-} from 'lucide-react'
+import { ArrowDown, RefreshCw, Settings, Info } from 'lucide-react'
+import { DEFI_TOKENS, TRADING_PAIRS, FEE_STRUCTURE } from '../lib/constants'
 import { useStore } from '../lib/store'
-import { TOKENS } from '../lib/constants'
-import { toast } from 'react-hot-toast'
-
-// Updated token types for metaverse assets
-const METAVERSE_ASSETS = [
-  { id: 'virtual-art', name: 'Virtual Art', symbol: 'VART', icon: '🎨', type: 'Digital Artwork' },
-  { id: 'gaming-item', name: 'Gaming Item', symbol: 'GAME', icon: '🎮', type: 'Game Asset' },
-  { id: 'virtual-land', name: 'Virtual Land', symbol: 'VLAND', icon: '🏞️', type: 'Virtual Property' },
-  { id: 'experience', name: 'Experience', symbol: 'EXP', icon: '🌟', type: 'Virtual Experience' },
-  { id: 'attestation', name: 'Attestation', symbol: 'ATT', icon: '✅', type: 'Verification' },
-  { id: 'component', name: 'Component', symbol: 'COMP', icon: '🧩', type: 'World Component' }
-]
-
-const METAVERSE_DESTINATIONS = [
-  { id: 'art-gallery', name: 'Art Gallery Metaverse', icon: '🖼️', type: 'Creative Space' },
-  { id: 'gaming-world', name: 'Gaming World', icon: '🎮', type: 'Interactive Gaming' },
-  { id: 'social-hub', name: 'Social Hub', icon: '👥', type: 'Community Space' },
-  { id: 'commerce-mall', name: 'Commerce Mall', icon: '🛍️', type: 'Trading Hub' },
-  { id: 'education-center', name: 'Education Center', icon: '📚', type: 'Learning Space' },
-  { id: 'entertainment-zone', name: 'Entertainment Zone', icon: '🎭', type: 'Media Hub' }
-]
 
 export default function SwapInterface() {
   const { 
@@ -41,301 +12,519 @@ export default function SwapInterface() {
     toToken, 
     fromAmount, 
     toAmount, 
-    route, 
-    loading,
-    setFromToken, 
-    setToToken, 
-    setFromAmount, 
-    setToAmount, 
- 
-    setRoute, 
-    setLoading 
+    slippage, 
+    isSwapping,
+    setFromToken,
+    setToToken,
+    setFromAmount,
+    setToAmount,
+    setSlippage,
+    swapTokens,
+    setIsSwapping
   } = useStore()
 
   const [showSettings, setShowSettings] = useState(false)
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
-  const [autoRefresh, setAutoRefresh] = useState(true)
-  const [selectedDestination, setSelectedDestination] = useState<string>('')
+  const [priceImpact, setPriceImpact] = useState(0.12)
+  const [gasEstimate, setGasEstimate] = useState(0.002)
+  const [isFindingRoute, setIsFindingRoute] = useState(false)
+  const [currentRoute, setCurrentRoute] = useState('Direct Swap')
+  const [routeOptions, setRouteOptions] = useState([
+    { name: 'Direct Swap', gas: 0.002, priceImpact: 0.12, best: true },
+    { name: 'Via USDC', gas: 0.003, priceImpact: 0.08, best: false },
+    { name: 'Via SOMG', gas: 0.0025, priceImpact: 0.15, best: false }
+  ])
+  const [lastSearchParams, setLastSearchParams] = useState('')
+  const [isAutoSearching, setIsAutoSearching] = useState(false)
 
-  // Mock route calculation for metaverse assets
-  const calculateRoute = useCallback(async (from: string, to: string, amount: string) => {
-    setLoading(true)
+  // Mock swap calculation
+  const calculateSwap = useCallback(() => {
+    if (!fromAmount || !fromToken || !toToken) return
     
-    // Simulate API call delay
+    // Simple mock calculation - in real app, this would call the AMM contract
+    const mockRate = 0.85 // Mock exchange rate
+    const calculatedAmount = parseFloat(fromAmount) * mockRate
+    setToAmount(calculatedAmount.toFixed(6))
+    
+    // Mock price impact calculation
+    setPriceImpact(Math.random() * 0.5)
+  }, [fromAmount, fromToken, toToken])
+
+  // Mock route finding function
+  const findBestRoute = useCallback(async () => {
+    if (!fromAmount || !fromToken || !toToken) return
+    
+    setIsFindingRoute(true)
+    
+    // Mock API call to find best route
     await new Promise(resolve => setTimeout(resolve, 1500))
     
-    // Generate mock route data for metaverse assets
-    const mockRoute = {
-      from: from,
-      to: to,
-      amount: amount,
-      estimatedOutput: (parseFloat(amount) * 0.95).toFixed(2),
-      routingFee: '0.5%',
-      gasEstimate: '0.002',
-      routePath: [
-        { step: 1, from: from, to: 'Bridge', protocol: 'Somnia Bridge' },
-        { step: 2, from: 'Bridge', to: to, protocol: 'Destination Protocol' }
-      ],
-      estimatedTime: '~2-5 seconds',
-      successRate: '99.8%',
-      savings: '5% better than direct transfer'
-    }
+    // Simulate finding better routes
+    const newRoutes = [
+      { name: 'Direct Swap', gas: parseFloat((Math.random() * 0.003 + 0.001).toFixed(4)), priceImpact: parseFloat((Math.random() * 0.2 + 0.05).toFixed(2)), best: false },
+      { name: 'Via USDC', gas: parseFloat((Math.random() * 0.004 + 0.002).toFixed(4)), priceImpact: parseFloat((Math.random() * 0.15 + 0.03).toFixed(2)), best: false },
+      { name: 'Via SOMG', gas: parseFloat((Math.random() * 0.0035 + 0.0015).toFixed(4)), priceImpact: parseFloat((Math.random() * 0.25 + 0.08).toFixed(2)), best: false }
+    ]
     
-    setRoute(mockRoute)
-    setLoading(false)
-    setLastRefresh(new Date())
-  }, [setRoute, setToAmount, setLoading])
+    // Find the best route (lowest price impact)
+    const bestRouteIndex = newRoutes.reduce((best, current, index) => 
+      current.priceImpact < newRoutes[best].priceImpact ? index : best, 0
+    )
+    
+    newRoutes[bestRouteIndex].best = true
+    setRouteOptions(newRoutes)
+    setCurrentRoute(newRoutes[bestRouteIndex].name)
+    
+    // Recalculate swap with new route
+    calculateSwap()
+    setIsFindingRoute(false)
+  }, [fromAmount, fromToken, toToken, calculateSwap])
 
-  // Auto-refresh timer
+  // Auto-route finding function
+  const autoFindRoute = useCallback(async () => {
+    if (!fromAmount || !fromToken || !toToken) return
+    
+    // Create search parameters string for caching
+    const searchParams = `${fromToken}-${toToken}-${fromAmount}`
+    
+    // Skip if we already searched for these exact parameters
+    if (searchParams === lastSearchParams) return
+    
+    // Skip if amount is too small
+    if (parseFloat(fromAmount) < 0.001) return
+    
+    setIsAutoSearching(true)
+    
+    try {
+      // Mock API call to find best route
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Simulate finding better routes
+      const newRoutes = [
+        { name: 'Direct Swap', gas: parseFloat((Math.random() * 0.003 + 0.001).toFixed(4)), priceImpact: parseFloat((Math.random() * 0.2 + 0.05).toFixed(2)), best: false },
+        { name: 'Via USDC', gas: parseFloat((Math.random() * 0.004 + 0.002).toFixed(4)), priceImpact: parseFloat((Math.random() * 0.15 + 0.03).toFixed(2)), best: false },
+        { name: 'Via SOMG', gas: parseFloat((Math.random() * 0.0035 + 0.0015).toFixed(4)), priceImpact: parseFloat((Math.random() * 0.25 + 0.08).toFixed(2)), best: false }
+      ]
+      
+      // Find the best route (lowest price impact)
+      const bestRouteIndex = newRoutes.reduce((best, current, index) => 
+        current.priceImpact < newRoutes[best].priceImpact ? index : best, 0
+      )
+      
+      newRoutes[bestRouteIndex].best = true
+      setRouteOptions(newRoutes)
+      setCurrentRoute(newRoutes[bestRouteIndex].name)
+      setLastSearchParams(searchParams)
+      
+      // Update price impact and gas estimate
+      setPriceImpact(newRoutes[bestRouteIndex].priceImpact)
+      setGasEstimate(newRoutes[bestRouteIndex].gas)
+      
+      // Recalculate swap with new route
+      calculateSwap()
+    } catch (error) {
+      console.error('Auto-route finding failed:', error)
+    } finally {
+      setIsAutoSearching(false)
+    }
+  }, [fromAmount, fromToken, toToken, lastSearchParams, calculateSwap])
+
   useEffect(() => {
-    if (!autoRefresh || !fromAmount || !fromToken || !toToken) return
+    calculateSwap()
+  }, [fromAmount, fromToken, toToken])
 
-    const interval = setInterval(() => {
-      if (fromAmount && fromToken && toToken) {
-        calculateRoute(fromToken, toToken, fromAmount)
-      }
-    }, 30000) // Refresh every 30 seconds
-
-    return () => clearInterval(interval)
-  }, [autoRefresh, fromAmount, fromToken, toToken, calculateRoute])
-
-  // Auto-calculate route when inputs change
+  // Auto-route finding effect with debouncing
   useEffect(() => {
-    if (fromAmount && fromToken && toToken) {
-      calculateRoute(fromToken, toToken, fromAmount)
-    }
-  }, [fromAmount, fromToken, toToken, calculateRoute])
+    const timeoutId = setTimeout(() => {
+      autoFindRoute()
+    }, 500) // Wait 500ms after user stops typing
 
-  const handleAssetRouting = async () => {
-    if (!fromToken || !toToken || !fromAmount) {
-      toast.error('Please select assets and enter amount')
-      return
-    }
+    return () => clearTimeout(timeoutId)
+  }, [fromAmount, fromToken, toToken])
 
-    if (!selectedDestination) {
-      toast.error('Please select a destination metaverse')
-      return
+  // Manual route finding effect
+  useEffect(() => {
+    if (isFindingRoute) {
+      findBestRoute()
     }
+  }, [isFindingRoute])
 
-    toast.success('Asset routing initiated! This is a demo - in production this would execute the actual transfer.')
+  const handleSwap = async () => {
+    if (!fromAmount || !toAmount) return
+    
+    setIsSwapping(true)
+    
+    // Mock swap execution
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    setIsSwapping(false)
+    // In real app, this would execute the swap transaction
   }
 
-  const handleSwapTokens = () => {
-    const temp = fromToken
-    setFromToken(toToken)
-    setToToken(temp)
+  const handleMaxClick = () => {
+    // Mock max amount - in real app, this would get user's balance
+    setFromAmount('1000')
   }
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <motion.div className="gradient-border card-glow">
-        <div className="gradient-border-inner p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">Asset Router</h2>
+    <div className="max-w-md mx-auto">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="card card-hover p-6"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <h2 className="text-xl font-semibold text-white">Swap Tokens</h2>
             <div className="flex items-center space-x-2">
-              <button 
-                onClick={() => {
-                  if (fromAmount && fromToken && toToken) {
-                    calculateRoute(fromToken, toToken, fromAmount)
-                  }
-                }}
-                disabled={!fromAmount || !fromToken || !toToken || loading}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Refresh route"
-              >
-                <motion.div
-                  animate={{ rotate: loading ? 360 : 0 }}
-                  transition={{ duration: 1, repeat: loading ? Infinity : 0, ease: "linear" }}
-                >
-                  <RefreshCw className="w-5 h-5" />
-                </motion.div>
-              </button>
-              <button 
-                onClick={() => setShowSettings(true)}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+              <span className="text-xs text-emerald-400" title="Automatically finds the best route when you change tokens or amounts">Auto-Route</span>
             </div>
           </div>
-
-          {/* From Asset Selection */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Route From
-            </label>
-            <div className="relative">
-              <select
-                value={fromToken || ''}
-                onChange={(e) => setFromToken(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
-              >
-                <option value="">Select Virtual Asset</option>
-                {METAVERSE_ASSETS.map((asset) => (
-                  <option key={asset.id} value={asset.id}>
-                    {asset.icon} {asset.name} ({asset.symbol}) - {asset.type}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="flex items-center space-x-2">
+            <motion.button 
+              onClick={findBestRoute}
+              disabled={!fromAmount || !fromToken || !toToken || isFindingRoute}
+              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              whileHover={!isFindingRoute ? { scale: 1.05 } : {}}
+              whileTap={!isFindingRoute ? { scale: 0.95 } : {}}
+              title="Find Best Route (Manual)"
+            >
+              <RefreshCw className={`w-5 h-5 ${isFindingRoute ? 'animate-spin' : ''}`} />
+            </motion.button>
+            <motion.button 
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all duration-200"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Settings className="w-5 h-5" />
+            </motion.button>
           </div>
+        </div>
 
-          {/* Amount Input */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Amount
-            </label>
-            <div className="relative">
-              <input
+        {/* From Token Input */}
+        <div className="bg-slate-700/50 rounded-xl p-4 mb-4 border border-slate-600/50">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-slate-400">From</span>
+            <button
+              onClick={handleMaxClick}
+              className="text-xs text-blue-400 hover:text-blue-300 transition-colors hover:bg-blue-500/10 px-2 py-1 rounded"
+            >
+              MAX
+            </button>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <div className="flex-1">
+              <input 
                 type="number"
                 value={fromAmount}
                 onChange={(e) => setFromAmount(e.target.value)}
-                placeholder="Enter amount"
-                className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
+                placeholder="0.0"
+                className="w-full bg-transparent text-2xl font-semibold text-white placeholder-slate-500 outline-none"
               />
             </div>
-          </div>
-
-          {/* Swap Direction Button */}
-          <div className="flex justify-center mb-4">
-            <button
-              onClick={handleSwapTokens}
-              className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+            
+            <select
+              value={fromToken}
+              onChange={(e) => setFromToken(e.target.value)}
+              className="bg-slate-600 text-white px-3 py-2 rounded-lg border border-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
             >
-              <ArrowDown className="w-5 h-5" />
-            </button>
+              {DEFI_TOKENS.map((token) => (
+                <option key={token.symbol} value={token.symbol}>
+                  {token.icon} {token.symbol}
+                </option>
+              ))}
+            </select>
           </div>
+          
+          <div className="text-sm text-slate-400 mt-2">
+            Balance: 1,000 {fromToken}
+          </div>
+        </div>
 
-          {/* To Asset Selection */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Route To
-            </label>
-            <div className="relative">
-              <select
-                value={toToken || ''}
-                onChange={(e) => setToToken(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
-              >
-                <option value="">Select Destination Asset</option>
-                {METAVERSE_ASSETS.map((asset) => (
-                  <option key={asset.id} value={asset.id}>
-                    {asset.icon} {asset.name} ({asset.symbol}) - {asset.type}
-                  </option>
-                ))}
-              </select>
+        {/* Swap Arrow */}
+        <div className="flex justify-center mb-4">
+          <motion.button
+            onClick={swapTokens}
+            className="p-2 bg-slate-700 hover:bg-slate-600 rounded-full transition-all duration-200 border border-slate-600/50"
+            whileHover={{ scale: 1.1, rotate: 180 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <ArrowDown className="w-5 h-5 text-slate-300" />
+          </motion.button>
+        </div>
+
+        {/* To Token Input */}
+        <div className="bg-slate-700/50 rounded-xl p-4 mb-4 border border-slate-600/50">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-slate-400">To</span>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <div className="flex-1">
+              <input 
+                type="number"
+                value={toAmount}
+                onChange={(e) => setToAmount(e.target.value)}
+                placeholder="0.0"
+                className="w-full bg-transparent text-2xl font-semibold text-white placeholder-slate-500 outline-none"
+                readOnly
+              />
+            </div>
+            
+            <select
+              value={toToken}
+              onChange={(e) => setToToken(e.target.value)}
+              className="bg-slate-600 text-white px-3 py-2 rounded-lg border border-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+            >
+              {DEFI_TOKENS.map((token) => (
+                <option key={token.symbol} value={token.symbol}>
+                  {token.icon} {token.symbol}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Route Information */}
+        <div className="bg-slate-700/30 rounded-xl p-4 mb-4 border border-slate-600/30">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-slate-400">Route</span>
+            <div className="flex items-center space-x-2">
+              {isFindingRoute ? (
+                <div className="flex items-center space-x-2 text-xs text-blue-400">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  <span>Finding best route...</span>
+                </div>
+              ) : isAutoSearching ? (
+                <div className="flex items-center space-x-2 text-xs text-amber-400">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  <span>Auto-searching...</span>
+                </div>
+              ) : (
+                <span className="text-xs text-emerald-400 bg-emerald-500/20 px-2 py-1 rounded-full">
+                  Best Route
+                </span>
+              )}
             </div>
           </div>
-
-          {/* Destination Metaverse Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Destination Metaverse
-            </label>
-            <div className="relative">
-              <select
-                value={selectedDestination}
-                onChange={(e) => setSelectedDestination(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
-              >
-                <option value="">Select Metaverse</option>
-                {METAVERSE_DESTINATIONS.map((dest) => (
-                  <option key={dest.id} value={dest.id}>
-                    {dest.icon} {dest.name} - {dest.type}
-                  </option>
-                ))}
-              </select>
+          
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-300">Current Route:</span>
+              <span className="text-white font-medium">{currentRoute}</span>
+            </div>
+            
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-300">Price Impact:</span>
+              <span className={`font-medium ${priceImpact < 0.1 ? 'text-emerald-400' : priceImpact < 0.5 ? 'text-amber-400' : 'text-red-400'}`}>
+                {priceImpact}%
+              </span>
+            </div>
+            
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-300">Estimated Gas:</span>
+              <span className="text-white font-medium">{gasEstimate} SOM</span>
             </div>
           </div>
+          
+          {/* Route Options */}
+          <div className="mt-3 pt-3 border-t border-slate-600/30">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-slate-400">Alternative Routes:</span>
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                View All
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-2">
+              {routeOptions.slice(0, 3).map((route) => (
+                <div
+                  key={route.name}
+                  className={`p-2 rounded-lg text-xs cursor-pointer transition-all duration-200 ${
+                    route.best 
+                      ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300' 
+                      : 'bg-slate-600/50 hover:bg-slate-600/70 text-slate-300'
+                  }`}
+                  onClick={() => {
+                    setCurrentRoute(route.name)
+                    setPriceImpact(route.priceImpact)
+                    setGasEstimate(route.gas)
+                    calculateSwap()
+                  }}
+                >
+                  <div className="font-medium mb-1">{route.name}</div>
+                  <div className="text-slate-400">{route.priceImpact}%</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
-          {/* Route Information */}
-          {route && (
-            <div className="mb-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-              <h3 className="text-lg font-semibold mb-3 text-blue-400">Route Details</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Estimated Output:</span>
-                  <span className="text-white">{route.estimatedOutput}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Routing Fee:</span>
-                  <span className="text-white">{route.routingFee}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Gas Estimate:</span>
-                  <span className="text-white">{route.gasEstimate} SOM</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Estimated Time:</span>
-                  <span className="text-white">{route.estimatedTime}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Success Rate:</span>
-                  <span className="text-green-400">{route.successRate}</span>
-                </div>
-                <div className="mt-3 p-2 bg-green-500/20 border border-green-500/30 rounded text-green-300 text-xs">
-                  💡 {route.savings}
+        {/* Swap Details */}
+        <div className="bg-slate-700/30 rounded-xl p-4 mb-6 border border-slate-600/30">
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-slate-400">Exchange Rate</span>
+              <span className="text-white">
+                1 {fromToken} = {(parseFloat(toAmount || '0') / parseFloat(fromAmount || '1')).toFixed(6)} {toToken}
+              </span>
+            </div>
+            
+            <div className="flex justify-between">
+              <span className="text-slate-400">Price Impact</span>
+              <span className={`${priceImpact < 1 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                {priceImpact.toFixed(2)}%
+              </span>
+            </div>
+            
+            <div className="flex justify-between">
+              <span className="text-slate-400">Trading Fee</span>
+              <span className="text-white">{FEE_STRUCTURE.AMM_TRADING_FEE}%</span>
+            </div>
+          
+            <div className="flex justify-between">
+              <span className="text-slate-400">Gas Estimate</span>
+              <span className="text-white">{gasEstimate} SOM</span>
+            </div>
+          </div>
+        </div>
+          
+        {/* Swap Button */}
+        <motion.button
+          onClick={handleSwap}
+          disabled={!fromAmount || !toAmount || isSwapping}
+          className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          whileHover={!isSwapping ? { scale: 1.02 } : {}}
+          whileTap={!isSwapping ? { scale: 0.98 } : {}}
+        >
+          {isSwapping ? (
+            <div className="flex items-center justify-center space-x-2">
+              <RefreshCw className="w-5 h-5 animate-spin" />
+              <span>Swapping...</span>
+            </div>
+          ) : (
+            'Swap Tokens'
+          )}
+        </motion.button>
+
+        {/* Settings Panel */}
+        {showSettings && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-4 p-4 bg-slate-700/30 rounded-xl border border-slate-600/30"
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-slate-400">Slippage Tolerance</label>
+                <div className="flex items-center space-x-2 mt-1">
+                  <input
+                    type="number"
+                    value={slippage}
+                    onChange={(e) => setSlippage(parseFloat(e.target.value))}
+                    step="0.1"
+                    min="0.1"
+                    max="50"
+                    className="flex-1 bg-slate-600 text-white px-3 py-2 rounded-lg border border-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                  />
+                  <span className="text-white">%</span>
                 </div>
               </div>
               
-              {lastRefresh && (
-                <div className="text-xs text-gray-500 text-center mt-3">
-                  Last updated: {lastRefresh.toLocaleTimeString()}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Route Path Visualization */}
-          {route && (
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-300 mb-3">Route Path</h4>
-              <div className="space-y-2">
-                {route.routePath.map((step, index) => (
-                  <div key={index} className="flex items-center space-x-3 text-sm">
-                    <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 text-xs font-bold">
-                      {step.step}
+              {/* Route Options */}
+              <div>
+                <label className="text-sm text-slate-400 mb-3 block">Available Routes</label>
+                <div className="space-y-2">
+                  {routeOptions.map((route) => (
+                    <div
+                      key={route.name}
+                      className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                        route.best 
+                          ? 'bg-emerald-500/20 border border-emerald-500/30' 
+                          : 'bg-slate-600/50 hover:bg-slate-600/70'
+                      }`}
+                      onClick={() => {
+                        setCurrentRoute(route.name)
+                        setPriceImpact(route.priceImpact)
+                        setGasEstimate(route.gas)
+                        calculateSwap()
+                        setShowSettings(false)
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className={`text-sm font-medium ${
+                            route.best ? 'text-emerald-300' : 'text-white'
+                          }`}>
+                            {route.name}
+                          </span>
+                          {route.best && (
+                            <span className="text-xs text-emerald-400 bg-emerald-500/20 px-2 py-1 rounded-full">
+                              Best
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-right text-xs">
+                          <div className="text-slate-400">Price Impact: {route.priceImpact}%</div>
+                          <div className="text-slate-400">Gas: {route.gas} SOM</div>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-gray-300">{step.from}</span>
-                    <ArrowDown className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-300">{step.to}</span>
-                    <span className="text-gray-500 text-xs">via {step.protocol}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
-          )}
+          </motion.div>
+        )}
 
-          {/* Execute Button */}
-          <button
-            onClick={handleAssetRouting}
-            disabled={!fromToken || !toToken || !fromAmount || !selectedDestination || loading}
-            className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <div className="flex items-center justify-center space-x-2">
-                <RefreshCw className="w-5 h-5 animate-spin" />
-                <span>Calculating Route...</span>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center space-x-2">
-                <Globe className="w-5 h-5" />
-                <span>Route Asset</span>
-              </div>
-            )}
-          </button>
-
-          {/* Info Cards */}
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-center">
-              <Shield className="w-5 h-5 text-blue-400 mx-auto mb-1" />
-              <div className="text-xs text-blue-300">Secure Routing</div>
-            </div>
-            <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg text-center">
-              <Zap className="w-5 h-5 text-purple-400 mx-auto mb-1" />
-              <div className="text-xs text-purple-300">Fast Execution</div>
+        {/* Info Section */}
+        <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+          <div className="flex items-start space-x-3">
+            <Info className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-blue-300">
+              <p className="font-medium mb-1">Trading on Somnia Network</p>
+              <p>This swap will be executed on Somnia&apos;s AMM DEX with secure smart contracts and minimal fees.</p>
             </div>
           </div>
+        </div>
+      </motion.div>
+      
+      {/* Popular Trading Pairs */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="mt-6"
+      >
+        <h3 className="text-lg font-semibold text-white mb-4">Popular Trading Pairs</h3>
+        <div className="grid grid-cols-2 gap-3">
+          {TRADING_PAIRS.slice(0, 4).map((pair) => (
+            <motion.button
+              key={pair.id}
+              onClick={() => {
+                setFromToken(pair.token0)
+                setToToken(pair.token1)
+              }}
+              className="card card-hover p-3 text-left transition-all duration-200"
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="flex items-center space-x-2 mb-2">
+                <span className="text-lg">{pair.icon0}</span>
+                <span className="text-lg">{pair.icon1}</span>
+              </div>
+              <div className="text-sm font-medium text-white">{pair.token0}/{pair.token1}</div>
+              <div className="text-xs text-slate-400">Vol: {pair.volume24h}</div>
+            </motion.button>
+          ))}
         </div>
       </motion.div>
     </div>

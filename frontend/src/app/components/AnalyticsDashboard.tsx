@@ -3,372 +3,418 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
-  BarChart3, 
   TrendingUp, 
   Users, 
-  Globe,
-  Shield,
-  Zap,
-  Palette,
-  Gamepad2,
-  Star,
-  ArrowUpRight,
-  ArrowDownRight
+  BarChart3, 
+  RefreshCw,
+  ArrowRight,
+  DollarSign,
+  Zap
 } from 'lucide-react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts'
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { DEFI_PROTOCOLS, LENDING_MARKETS, STAKING_TIERS } from '../lib/constants'
 
-// Mock data for metaverse analytics
-const mockData = {
-  totalAssets: 15420,
-  totalTransfers: 8920,
-  activeUsers: 3420,
-  totalMetaverses: 8,
-  dailyTransfers: 156,
-  weeklyGrowth: 12.5,
-  monthlyGrowth: 28.3,
-  protocolUsage: {
-    som0: 65,
-    som1: 35
-  },
-  assetTypes: [
-    { name: 'Virtual Art', value: 35, color: '#8B5CF6' },
-    { name: 'Gaming Items', value: 28, color: '#06B6D4' },
-    { name: 'Virtual Land', value: 20, color: '#10B981' },
-    { name: 'Experiences', value: 12, color: '#F59E0B' },
-    { name: 'Components', value: 5, color: '#EF4444' }
-  ],
-  transferHistory: [
-    { date: 'Jan 1', transfers: 120, assets: 89 },
-    { date: 'Jan 2', transfers: 145, assets: 112 },
-    { date: 'Jan 3', transfers: 132, assets: 98 },
-    { date: 'Jan 4', transfers: 167, assets: 134 },
-    { date: 'Jan 5', transfers: 189, assets: 156 },
-    { date: 'Jan 6', transfers: 201, assets: 178 },
-    { date: 'Jan 7', transfers: 156, assets: 134 }
-  ],
-  metaverseStats: [
-    { name: 'Art Gallery', transfers: 2340, growth: 15.2, icon: Palette },
-    { name: 'Gaming World', transfers: 1890, growth: 8.7, icon: Gamepad2 },
-    { name: 'Social Hub', transfers: 1560, growth: 22.1, icon: Users },
-    { name: 'Commerce Mall', transfers: 1340, growth: 18.9, icon: Globe },
-    { name: 'Education Center', transfers: 890, growth: 12.4, icon: Star },
-    { name: 'Entertainment Zone', transfers: 1120, growth: 14.6, icon: Zap }
-  ]
-}
+// Mock data for charts
+const volumeData = [
+  { time: '00:00', volume: 125000 },
+  { time: '04:00', volume: 189000 },
+  { time: '08:00', volume: 156000 },
+  { time: '12:00', volume: 234000 },
+  { time: '16:00', volume: 198000 },
+  { time: '20:00', volume: 267000 },
+  { time: '24:00', volume: 189000 }
+]
 
-const StatCard = ({ title, value, change, icon: Icon, color = 'blue' }: any) => (
-  <motion.div 
-    className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-6 hover:border-blue-500/50 transition-all duration-300"
-    whileHover={{ y: -5 }}
-  >
-    <div className="flex items-center justify-between mb-4">
-      <div className={`w-12 h-12 bg-${color}-500/20 rounded-xl flex items-center justify-center text-${color}-400`}>
-        <Icon className="w-6 h-6" />
-      </div>
-      <div className={`flex items-center space-x-1 text-sm ${
-        change >= 0 ? 'text-green-400' : 'text-red-400'
-      }`}>
-        {change >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-        <span>{Math.abs(change)}%</span>
-      </div>
-    </div>
-    <div className="text-2xl font-bold text-white mb-2">{value.toLocaleString()}</div>
-    <div className="text-gray-400 text-sm">{title}</div>
-  </motion.div>
-)
+const tvlData = [
+  { protocol: 'AMM', tvl: 2500000, change: 12.5 },
+  { protocol: 'Lending', tvl: 1800000, change: 8.2 },
+  { protocol: 'Staking', tvl: 3200000, change: 15.7 },
+  { protocol: 'Governance', tvl: 950000, change: 3.1 }
+]
 
-const MetaverseCard = ({ metaverse }: any) => (
-  <motion.div 
-    className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-4 hover:border-blue-500/50 transition-all duration-300"
-    whileHover={{ y: -2 }}
-  >
-    <div className="flex items-center space-x-3 mb-3">
-      <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center text-blue-400">
-        <metaverse.icon className="w-5 h-5" />
-      </div>
-      <div>
-        <div className="font-semibold text-white">{metaverse.name}</div>
-        <div className="text-sm text-gray-400">{metaverse.transfers.toLocaleString()} transfers</div>
-      </div>
-    </div>
-    <div className={`flex items-center space-x-1 text-sm ${
-      metaverse.growth >= 0 ? 'text-green-400' : 'text-red-400'
-    }`}>
-      {metaverse.growth >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-      <span>{metaverse.growth}%</span>
-    </div>
-  </motion.div>
-)
+const userActivityData = [
+  { hour: '0', users: 45, transactions: 120 },
+  { hour: '4', users: 32, transactions: 89 },
+  { hour: '8', users: 78, transactions: 234 },
+  { hour: '12', users: 156, transactions: 456 },
+  { hour: '16', users: 134, transactions: 389 },
+  { hour: '20', users: 98, transactions: 267 },
+  { hour: '24', users: 67, transactions: 189 }
+]
+
+const protocolUsageData = [
+  { name: 'Trading', value: 45, color: '#3B82F6' },
+  { name: 'Lending', value: 25, color: '#10B981' },
+  { name: 'Staking', value: 20, color: '#8B5CF6' },
+  { name: 'Governance', value: 10, color: '#F59E0B' }
+]
 
 export default function AnalyticsDashboard() {
-  const [activeTab, setActiveTab] = useState('overview')
-  const [timeRange, setTimeRange] = useState('7d')
+  const [timeframe, setTimeframe] = useState('24h')
+  const [isLoading, setIsLoading] = useState(false)
+
+  const refreshData = async () => {
+    setIsLoading(true)
+    // Mock API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    setIsLoading(false)
+  }
+
+  useEffect(() => {
+    refreshData()
+  }, [timeframe])
+
+  const stats = [
+    {
+      title: 'Total Value Locked',
+      value: '$8.45M',
+      change: '+12.5%',
+      changeType: 'positive',
+      icon: DollarSign,
+      color: 'text-green-400'
+    },
+    {
+      title: '24h Trading Volume',
+      value: '$2.34M',
+      change: '+8.2%',
+      changeType: 'positive',
+      icon: TrendingUp,
+      color: 'text-blue-400'
+    },
+    {
+      title: 'Active Users',
+      value: '1,234',
+      change: '+15.7%',
+      changeType: 'positive',
+      icon: Users,
+      color: 'text-purple-400'
+    },
+    {
+      title: 'Total Transactions',
+      value: '45,678',
+      change: '+3.1%',
+      changeType: 'positive',
+      icon: Zap,
+      color: 'text-yellow-400'
+    }
+  ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div 
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+    <div className="max-w-7xl mx-auto px-6 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">DeFi Analytics Dashboard</h1>
+          <p className="text-lg text-slate-300 mb-8">
+              Track your DeFi portfolio performance, monitor protocol usage, and analyze market trends across Somnia&apos;s ecosystem.
+            </p>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <select
+            value={timeframe}
+            onChange={(e) => setTimeframe(e.target.value)}
+            className="bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:border-blue-500"
+          >
+            <option value="1h">1 Hour</option>
+            <option value="24h">24 Hours</option>
+            <option value="7d">7 Days</option>
+            <option value="30d">30 Days</option>
+          </select>
+          
+          <button
+            onClick={refreshData}
+            disabled={isLoading}
+            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {stats.map((stat, index) => (
+          <motion.div
+            key={stat.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: index * 0.1 }}
+            className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6 hover:border-gray-600 transition-colors"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className={`p-2 bg-gray-700 rounded-lg ${stat.color}`}>
+                <stat.icon className="w-6 h-6" />
+              </div>
+              <div className={`flex items-center space-x-1 text-sm ${
+                stat.changeType === 'positive' ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {stat.changeType === 'positive' ? (
+                  <ArrowRight className="w-4 h-4" />
+                ) : (
+                  <ArrowRight className="w-4 h-4" />
+                )}
+                <span>{stat.change}</span>
+              </div>
+            </div>
+            
+            <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
+            <div className="text-sm text-gray-400">{stat.title}</div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Trading Volume Chart */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
+          className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6"
         >
-          <h1 className="text-4xl font-bold text-white mb-4">Metaverse Analytics</h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Track virtual asset routing, cross-metaverse transfers, and protocol usage across the Somnia ecosystem
-          </p>
-        </motion.div>
-
-        {/* Time Range Selector */}
-        <motion.div 
-          className="flex justify-center mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-        >
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-lg border border-gray-700 p-1">
-            {['24h', '7d', '30d', '90d'].map((range) => (
-              <button
-                key={range}
-                onClick={() => setTimeRange(range)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                  timeRange === range
-                    ? 'bg-blue-500 text-white'
-                    : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
-                }`}
-              >
-                {range}
-              </button>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Key Stats */}
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <StatCard 
-            title="Total Virtual Assets" 
-            value={mockData.totalAssets} 
-            change={mockData.weeklyGrowth} 
-            icon={Palette} 
-            color="purple"
-          />
-          <StatCard 
-            title="Cross-Metaverse Transfers" 
-            value={mockData.totalTransfers} 
-            change={mockData.monthlyGrowth} 
-            icon={Globe} 
-            color="blue"
-          />
-          <StatCard 
-            title="Active Users" 
-            value={mockData.activeUsers} 
-            change={8.9} 
-            icon={Users} 
-            color="green"
-          />
-          <StatCard 
-            title="Connected Metaverses" 
-            value={mockData.totalMetaverses} 
-            change={12.5} 
-            icon={Star} 
-            color="yellow"
-          />
-        </motion.div>
-
-        {/* Charts Section */}
-        <motion.div 
-          className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-        >
-          {/* Transfer History Chart */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
-            <h3 className="text-xl font-semibold text-white mb-6">Transfer Volume</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={mockData.transferHistory}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="date" stroke="#9CA3AF" />
-                <YAxis stroke="#9CA3AF" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1F2937', 
-                    border: '1px solid #374151',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="transfers" 
-                  stroke="#3B82F6" 
-                  strokeWidth={3}
-                  dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="assets" 
-                  stroke="#8B5CF6" 
-                  strokeWidth={3}
-                  dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-            <div className="flex items-center justify-center space-x-6 mt-4 text-sm">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-gray-300">Transfers</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                <span className="text-gray-300">Assets</span>
-              </div>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-white">Trading Volume (24h)</h3>
+            <div className="flex items-center space-x-2 text-green-400">
+              <TrendingUp className="w-4 h-4" />
+              <span className="text-sm">+12.5%</span>
             </div>
           </div>
-
-          {/* Asset Type Distribution */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
-            <h3 className="text-xl font-semibold text-white mb-6">Asset Type Distribution</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={mockData.assetTypes}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {mockData.assetTypes.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1F2937', 
-                    border: '1px solid #374151',
-                    borderRadius: '8px'
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="grid grid-cols-2 gap-2 mt-4 text-sm">
-              {mockData.assetTypes.map((asset: any, index: number) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: asset.color }}
-                  ></div>
-                  <span className="text-gray-300">{asset.name}</span>
-                  <span className="text-white font-medium">{asset.value}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={volumeData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="time" stroke="#9CA3AF" />
+              <YAxis stroke="#9CA3AF" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#1F2937', 
+                  border: '1px solid #374151',
+                  borderRadius: '8px'
+                }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="volume" 
+                stroke="#3B82F6" 
+                strokeWidth={3}
+                dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </motion.div>
 
-        {/* Protocol Usage */}
-        <motion.div 
-          className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-6 mb-12"
+        {/* TVL by Protocol */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-white">TVL by Protocol</h3>
+            <div className="flex items-center space-x-2 text-blue-400">
+              <BarChart3 className="w-4 h-4" />
+              <span className="text-sm">Total: $8.45M</span>
+            </div>
+          </div>
+          
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={tvlData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="protocol" stroke="#9CA3AF" />
+              <YAxis stroke="#9CA3AF" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#1F2937', 
+                  border: '1px solid #374151',
+                  borderRadius: '8px'
+                }}
+              />
+              <Bar dataKey="tvl" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </motion.div>
+      </div>
+
+      {/* Protocol Performance */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6 mb-8"
+      >
+        <h3 className="text-xl font-semibold text-white mb-6">Protocol Performance</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {DEFI_PROTOCOLS.map((protocol) => (
+            <div key={protocol.name} className="text-center">
+              <div className={`w-16 h-16 ${protocol.color} rounded-xl flex items-center justify-center mx-auto mb-4`}>
+                <span className="text-3xl">{protocol.icon}</span>
+              </div>
+              <h4 className="text-lg font-semibold text-white mb-2">{protocol.name}</h4>
+              <div className="space-y-2 text-sm text-gray-400">
+                <div>TVL: {protocol.tvl}</div>
+                <div>Volume: {protocol.volume24h}</div>
+                <div>Pools: {protocol.pools}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* User Activity & Protocol Usage */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* User Activity */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
+          className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6"
         >
-          <h3 className="text-xl font-semibold text-white mb-6">Protocol Usage</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h4 className="text-lg font-medium text-gray-300 mb-4">SOM0 vs SOM1 Distribution</h4>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={[
-                  { protocol: 'SOM0', usage: mockData.protocolUsage.som0, color: '#3B82F6' },
-                  { protocol: 'SOM1', usage: mockData.protocolUsage.som1, color: '#8B5CF6' }
-                ]}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="protocol" stroke="#9CA3AF" />
-                  <YAxis stroke="#9CA3AF" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1F2937', 
-                      border: '1px solid #374151',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Bar dataKey="usage" fill="#3B82F6" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                    <Shield className="w-4 h-4 text-blue-400" />
-                  </div>
-                  <span className="text-white font-medium">SOM0 Protocol</span>
-                </div>
-                <span className="text-2xl font-bold text-blue-400">{mockData.protocolUsage.som0}%</span>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-purple-400" />
-                  </div>
-                  <span className="text-white font-medium">SOM1 Protocol</span>
-                </div>
-                <span className="text-2xl font-bold text-purple-400">{mockData.protocolUsage.som1}%</span>
-              </div>
-            </div>
-          </div>
+          <h3 className="text-xl font-semibold text-white mb-6">User Activity (24h)</h3>
+          
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={userActivityData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="hour" stroke="#9CA3AF" />
+              <YAxis stroke="#9CA3AF" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#1F2937', 
+                  border: '1px solid #374151',
+                  borderRadius: '8px'
+                }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="users" 
+                stackId="1"
+                stroke="#8B5CF6" 
+                fill="#8B5CF6" 
+                fillOpacity={0.3}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="transactions" 
+                stackId="2"
+                stroke="#10B981" 
+                fill="#10B981" 
+                fillOpacity={0.3}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         </motion.div>
 
-        {/* Metaverse Performance */}
-        <motion.div 
-          className="mb-12"
+        {/* Protocol Usage Distribution */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
+          className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6"
         >
-          <h3 className="text-2xl font-bold text-white mb-6 text-center">Metaverse Performance</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockData.metaverseStats.map((metaverse, index) => (
-              <MetaverseCard key={metaverse.name} metaverse={metaverse} />
+          <h3 className="text-xl font-semibold text-white mb-6">Protocol Usage Distribution</h3>
+          
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={protocolUsageData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={100}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                {protocolUsageData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#1F2937', 
+                  border: '1px solid #374151',
+                  borderRadius: '8px'
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+          
+          <div className="grid grid-cols-2 gap-4 mt-6">
+            {protocolUsageData.map((item) => (
+              <div key={item.name} className="flex items-center space-x-3">
+                <div 
+                  className="w-4 h-4 rounded-full"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="text-sm text-gray-300">{item.name}</span>
+                <span className="text-sm font-medium text-white">{item.value}%</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Lending & Staking Metrics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Lending Markets */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6"
+        >
+          <h3 className="text-xl font-semibold text-white mb-6">Lending Markets</h3>
+          
+          <div className="space-y-4">
+            {LENDING_MARKETS.map((market) => (
+              <div key={market.token} className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                    <span className="text-lg">💵</span>
+                  </div>
+                  <div>
+                    <div className="font-medium text-white">{market.token}</div>
+                    <div className="text-sm text-gray-400">Utilization: {market.utilization}</div>
+                  </div>
+                </div>
+                
+                <div className="text-right">
+                  <div className="text-sm text-green-400">Supply: {market.supplyRate}</div>
+                  <div className="text-sm text-red-400">Borrow: {market.borrowRate}</div>
+                </div>
+              </div>
             ))}
           </div>
         </motion.div>
 
-        {/* Recent Activity */}
-        <motion.div 
-          className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-6"
+        {/* Staking Tiers */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
+          transition={{ duration: 0.6, delay: 0.7 }}
+          className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6"
         >
-          <h3 className="text-xl font-semibold text-white mb-6">Recent Activity</h3>
+          <h3 className="text-xl font-semibold text-white mb-6">Staking Tiers</h3>
+          
           <div className="space-y-4">
-            {[
-              { action: 'Virtual Art transferred', from: 'Art Gallery', to: 'Gaming World', time: '2 min ago', type: 'transfer' },
-              { action: 'New attestation created', from: 'Verification System', to: 'Marketplace', time: '5 min ago', type: 'attestation' },
-              { action: 'Experience component added', from: 'Component Registry', to: 'Social Hub', time: '12 min ago', type: 'component' },
-              { action: 'Virtual land purchased', from: 'Commerce Mall', to: 'User Wallet', time: '18 min ago', type: 'purchase' }
-            ].map((activity, index) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg">
+            {STAKING_TIERS.map((tier) => (
+              <div key={tier.name} className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <div className={`w-3 h-3 rounded-full ${
-                    activity.type === 'transfer' ? 'bg-blue-500' :
-                    activity.type === 'attestation' ? 'bg-green-500' :
-                    activity.type === 'component' ? 'bg-purple-500' : 'bg-yellow-500'
-                  }`}></div>
+                  <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                    <span className="text-lg">💰</span>
+                  </div>
                   <div>
-                    <div className="text-white font-medium">{activity.action}</div>
-                    <div className="text-sm text-gray-400">{activity.from} → {activity.to}</div>
+                    <div className="font-medium text-white">{tier.name}</div>
+                    <div className="text-sm text-gray-400">{tier.multiplier} Multiplier</div>
                   </div>
                 </div>
-                <span className="text-sm text-gray-500">{activity.time}</span>
+                
+                <div className="text-right">
+                  <div className="text-sm text-purple-400">{tier.lockDuration}</div>
+                  <div className="text-sm text-gray-400">Penalty: {tier.penalty}</div>
+                </div>
               </div>
             ))}
           </div>

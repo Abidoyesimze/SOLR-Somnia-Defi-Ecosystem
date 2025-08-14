@@ -3,542 +3,641 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { 
-  Code, 
   BookOpen, 
-  Zap, 
+  Code, 
+  FileText, 
   Shield, 
-  Users, 
-  Globe,
-  Palette,
-  Gamepad2,
-  Star,
-  ArrowRight,
-  Copy,
+  Zap, 
   CheckCircle,
+  ArrowRight,
   ExternalLink
 } from 'lucide-react'
+import { DEFI_PROTOCOLS, CONTRACTS } from '../lib/constants'
 
 const sections = [
   {
     id: 'getting-started',
     title: 'Getting Started',
     icon: BookOpen,
-    description: 'Quick start guide for integrating with SOLR metaverse asset routing'
+    content: `
+# Getting Started with Somnia DeFi
+
+Welcome to the complete DeFi ecosystem for Somnia Network. This guide will help you integrate with our protocols and start building DeFi applications.
+
+## Prerequisites
+- Node.js 18+ and npm/yarn
+- Solidity development environment (Hardhat/Foundry)
+- Somnia testnet RPC access
+- Basic understanding of DeFi concepts
+
+## Quick Start
+1. Add our contracts to your project
+2. Configure your network settings
+3. Deploy or interact with existing protocols
+4. Start building your DeFi application
+
+## Network Configuration
+- **Network**: Somnia Testnet
+- **Chain ID**: 50312
+- **RPC URL**: https://testnet-rpc.somnia.network
+- **Explorer**: https://testnet-explorer.somnia.network
+    `
   },
   {
     id: 'smart-contracts',
     title: 'Smart Contracts',
     icon: Code,
-    description: 'Complete contract ecosystem for virtual asset management and routing'
+    content: `
+# Smart Contract Architecture
+
+Our DeFi ecosystem consists of four core protocols, each designed to work together seamlessly.
+
+## Core Contracts
+
+### 1. SomniaAMM (Automated Market Maker)
+- **Purpose**: Token swapping and liquidity provision
+- **Features**: Uniswap v2-like AMM with customizable fees
+- **Key Functions**: \`swap()\`, \`addLiquidity()\`, \`removeLiquidity()\`
+
+### 2. SomniaLending (Lending Protocol)
+- **Purpose**: Supply and borrow with collateral
+- **Features**: Interest earning, liquidation system, risk management
+- **Key Functions**: \`supply()\`, \`borrow()\`, \`repay()\`, \`liquidate()\`
+
+### 3. SomniaStaking (Staking Protocol)
+- **Purpose**: Stake tokens to earn rewards
+- **Features**: Multiple tiers, reward multipliers, flexible staking
+- **Key Functions**: \`stake()\`, \`unstake()\`, \`claimRewards()\`
+
+### 4. SomniaGovernance (Governance Token)
+- **Purpose**: Community governance and voting
+- **Features**: Proposal creation, voting system, token distribution
+- **Key Functions**: \`createProposal()\`, \`vote()\`, \`executeProposal()\`
+
+## Contract Addresses
+\`\`\`javascript
+const contractAddresses = {
+  'SomniaAMM': '${CONTRACTS.SOMNIA_AMM}',
+  'SomniaLending': '${CONTRACTS.SOMNIA_LENDING}',
+  'SomniaStaking': '${CONTRACTS.SOMNIA_STAKING}',
+  'SomniaGovernance': '${CONTRACTS.SOMNIA_GOVERNANCE}'
+}
+\`\`\`
+    `
   },
   {
-    id: 'somnia-protocols',
-    title: 'Somnia Protocols',
-    icon: Globe,
-    description: 'Integration with SOM0 and SOM1 protocols for asset interoperability'
+    id: 'protocols',
+    title: 'DeFi Protocols',
+    icon: Zap,
+    content: `
+# DeFi Protocol Integration
+
+Each protocol in our ecosystem can be used independently or combined for advanced DeFi strategies.
+
+## AMM Protocol (SomniaAMM)
+
+### Basic Swap
+\`\`\`solidity
+// Swap tokens using the AMM
+function swap(
+    address tokenIn,
+    address tokenOut,
+    uint256 amountIn,
+    uint256 amountOutMin
+) external returns (uint256 amountOut);
+\`\`\`
+
+### Add Liquidity
+\`\`\`solidity
+// Provide liquidity to a pool
+function addLiquidity(
+    address token0,
+    address token1,
+    uint256 amount0Desired,
+    uint256 amount1Desired,
+    uint256 amount0Min,
+    uint256 amount1Min
+) external returns (uint256 liquidity);
+\`\`\`
+
+## Lending Protocol (SomniaLending)
+
+### Supply Assets
+\`\`\`solidity
+// Supply tokens to earn interest
+function supply(address token, uint256 amount) external;
+\`\`\`
+
+### Borrow Assets
+\`\`\`solidity
+// Borrow against collateral
+function borrow(address token, uint256 amount) external;
+\`\`\`
+
+## Staking Protocol (SomniaStaking)
+
+### Stake Tokens
+\`\`\`solidity
+// Stake tokens in a specific tier
+function stake(
+    address stakingToken,
+    uint256 amount,
+    uint256 tierIndex
+) external;
+\`\`\`
+
+### Claim Rewards
+\`\`\`solidity
+// Claim accumulated rewards
+function claimRewards(address stakingToken) external;
+\`\`\`
+
+## Governance Protocol (SomniaGovernance)
+
+### Create Proposal
+\`\`\`solidity
+// Create a new governance proposal
+function createProposal(string memory description) external returns (uint256);
+\`\`\`
+
+### Vote on Proposal
+\`\`\`solidity
+// Vote on an active proposal
+function vote(uint256 proposalId, bool support) external;
+\`\`\`
+    `
   },
   {
     id: 'api-reference',
     title: 'API Reference',
-    icon: Zap,
-    description: 'Complete API documentation for all SOLR functions'
+    icon: FileText,
+    content: `
+# API Reference
+
+## Contract Interfaces
+
+### IERC20 Interface
+\`\`\`solidity
+interface IERC20 {
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address to, uint256 amount) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+}
+\`\`\`
+
+### AMM Interface
+\`\`\`solidity
+interface ISomniaAMM {
+    function swap(address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOutMin) external returns (uint256);
+    function getAmountOut(uint256 amountIn, address tokenIn, address tokenOut) external view returns (uint256);
+    function getPoolInfo(address token0, address token1) external view returns (PoolInfo memory);
+}
+\`\`\`
+
+### Lending Interface
+\`\`\`solidity
+interface ISomniaLending {
+    function supply(address token, uint256 amount) external;
+    function borrow(address token, uint256 amount) external;
+    function getUserPosition(address user, address token) external view returns (UserPosition memory);
+}
+\`\`\`
+
+## View Functions
+
+### Get Pool Information
+\`\`\`solidity
+// Get detailed pool information
+function getPoolInfo(address token0, address token1) external view returns (PoolInfo memory) {
+    return PoolInfo({
+        token0: pool.token0,
+        token1: pool.token1,
+        reserve0: pool.reserve0,
+        reserve1: pool.reserve1,
+        totalSupply: pool.totalSupply,
+        fee0: pool.fee0,
+        fee1: pool.fee1,
+        price0CumulativeLast: 0,
+        price1CumulativeLast: 0,
+        blockTimestampLast: block.timestamp
+    });
+}
+\`\`\`
+
+### Get User Position
+\`\`\`solidity
+// Get user's lending position
+function getUserPosition(address user, address token) external view returns (UserPosition memory) {
+    return userPositions[user][token];
+}
+\`\`\`
+    `
   },
   {
-    id: 'examples',
+    id: 'code-examples',
     title: 'Code Examples',
-    icon: Users,
-    description: 'Real-world examples and integration patterns'
+    icon: Code,
+    content: `
+# Code Examples
+
+## JavaScript/TypeScript Integration
+
+### Initialize Contracts
+\`\`\`typescript
+import { ethers } from 'ethers';
+import SomniaAMM from './contracts/SomniaAMM.json';
+import SomniaLending from './contracts/SomniaLending.json';
+
+const provider = new ethers.providers.Web3Provider(window.ethereum);
+const signer = provider.getSigner();
+
+const ammContract = new ethers.Contract(
+  CONTRACTS.SOMNIA_AMM,
+  SomniaAMM.abi,
+  signer
+);
+
+const lendingContract = new ethers.Contract(
+  CONTRACTS.SOMNIA_LENDING,
+  SomniaLending.abi,
+  signer
+);
+\`\`\`
+
+### Execute Token Swap
+\`\`\`typescript
+async function swapTokens(tokenIn: string, tokenOut: string, amountIn: string) {
+  try {
+    // Get minimum amount out
+    const amountOutMin = await ammContract.getAmountOut(amountIn, tokenIn, tokenOut);
+    
+    // Execute swap
+    const tx = await ammContract.swap(tokenIn, tokenOut, amountIn, amountOutMin);
+    await tx.wait();
+    
+    console.log('Swap executed successfully!');
+  } catch (error) {
+    console.error('Swap failed:', error);
+  }
+}
+\`\`\`
+
+### Supply Assets to Lending
+\`\`\`typescript
+async function supplyAssets(token: string, amount: string) {
+  try {
+    // Approve tokens first
+    const tokenContract = new ethers.Contract(token, ERC20_ABI, signer);
+    await tokenContract.approve(CONTRACTS.SOMNIA_LENDING, amount);
+    
+    // Supply tokens
+    const tx = await lendingContract.supply(token, amount);
+    await tx.wait();
+    
+    console.log('Assets supplied successfully!');
+  } catch (error) {
+    console.error('Supply failed:', error);
+  }
+}
+\`\`\`
+
+### Stake Tokens
+\`\`\`typescript
+async function stakeTokens(stakingToken: string, amount: string, tier: number) {
+  try {
+    // Approve tokens first
+    const tokenContract = new ethers.Contract(stakingToken, ERC20_ABI, signer);
+    await tokenContract.approve(CONTRACTS.SOMNIA_STAKING, amount);
+    
+    // Stake tokens
+    const tx = await stakingContract.stake(stakingToken, amount, tier);
+    await tx.wait();
+    
+    console.log('Tokens staked successfully!');
+  } catch (error) {
+    console.error('Staking failed:', error);
+  }
+}
+\`\`\`
+
+## React Hook Example
+
+### Custom Hook for AMM
+\`\`\`typescript
+import { useState, useEffect } from 'react';
+import { useContract, useProvider, useSigner } from 'wagmi';
+
+export function useAMM() {
+  const [pools, setPools] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  const contract = useContract({
+    address: CONTRACTS.SOMNIA_AMM,
+    abi: SomniaAMM.abi,
+  });
+  
+  const getPools = async () => {
+    setLoading(true);
+    try {
+      const poolCount = await contract.getPoolCount();
+      const poolList = [];
+      
+      for (let i = 0; i < poolCount; i++) {
+        const pool = await contract.getPoolByIndex(i);
+        poolList.push(pool);
+      }
+      
+      setPools(poolList);
+    } catch (error) {
+      console.error('Failed to fetch pools:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    getPools();
+  }, []);
+  
+  return { pools, loading, getPools };
+}
+\`\`\`
+    `
   },
   {
     id: 'security',
     title: 'Security & Best Practices',
     icon: Shield,
-    description: 'Security considerations and development best practices'
+    content: `
+# Security & Best Practices
+
+## Smart Contract Security
+
+### 1. Access Control
+- All critical functions are protected with \`onlyOwner\` modifier
+- Emergency pause functionality available
+- Upgradeable contract architecture
+
+### 2. Reentrancy Protection
+- All external calls use \`ReentrancyGuard\`
+- Checks-Effects-Interactions pattern implemented
+- Safe transfer functions used
+
+### 3. Input Validation
+- Comprehensive parameter validation
+- Bounds checking for numerical inputs
+- Address validation and zero-address checks
+
+## Integration Security
+
+### 1. Frontend Security
+\`\`\`typescript
+// Always validate user inputs
+function validateSwapInputs(tokenIn: string, amount: string) {
+  if (!ethers.utils.isAddress(tokenIn)) {
+    throw new Error('Invalid token address');
+  }
+  
+  if (parseFloat(amount) <= 0) {
+    throw new Error('Amount must be greater than 0');
+  }
+}
+\`\`\`
+
+### 2. Transaction Security
+\`\`\`typescript
+// Use proper error handling
+async function executeTransaction(txFunction: () => Promise<any>) {
+  try {
+    const tx = await txFunction();
+    const receipt = await tx.wait();
+    
+    if (receipt.status === 1) {
+      console.log('Transaction successful');
+    } else {
+      throw new Error('Transaction failed');
+    }
+  } catch (error) {
+    console.error('Transaction error:', error);
+    throw error;
+  }
+}
+\`\`\`
+
+### 3. Rate Limiting
+\`\`\`typescript
+// Implement rate limiting for user actions
+const rateLimit = new Map();
+
+function checkRateLimit(user: string, action: string, limit: number) {
+  const key = \`\${user}:\${action}\`;
+  const lastAction = rateLimit.get(key) || 0;
+  const now = Date.now();
+  
+  if (now - lastAction < limit) {
+    throw new Error('Rate limit exceeded');
+  }
+  
+  rateLimit.set(key, now);
+}
+\`\`\`
+
+## Testing Guidelines
+
+### 1. Unit Tests
+- Test all public functions
+- Test edge cases and error conditions
+- Mock external dependencies
+
+### 2. Integration Tests
+- Test contract interactions
+- Test with real network conditions
+- Test gas optimization
+
+### 3. Security Tests
+- Fuzz testing for inputs
+- Reentrancy attack testing
+- Access control testing
+
+## Monitoring & Alerts
+
+### 1. Event Monitoring
+\`\`\`typescript
+// Listen to important events
+contract.on('Swap', (sender, tokenIn, tokenOut, amountIn, amountOut) => {
+  console.log('Swap event:', { sender, tokenIn, tokenOut, amountIn, amountOut });
+  
+  // Send alert for large swaps
+  if (parseFloat(amountIn) > 10000) {
+    sendAlert('Large swap detected', { amount: amountIn, token: tokenIn });
+  }
+});
+\`\`\`
+
+### 2. Health Checks
+\`\`\`typescript
+// Regular health checks
+setInterval(async () => {
+  try {
+    const tvl = await contract.getTotalValueLocked();
+    const volume = await contract.getTotalVolume();
+    
+    if (tvl < MINIMUM_TVL || volume < MINIMUM_VOLUME) {
+      sendAlert('Protocol health check failed', { tvl, volume });
+    }
+  } catch (error) {
+    sendAlert('Health check error', { error: error.message });
+  }
+}, 5 * 60 * 1000); // Every 5 minutes
+\`\`\`
+    `
   }
 ]
 
-const codeExamples = {
-  'basic-routing': `// Basic asset routing example
-import { SolrSDK } from '@solr/metaverse-sdk';
-
-const solr = new SolrSDK(provider);
-
-// Route a virtual asset between metaverses
-const route = await solr.routeAsset({
-  assetId: 'virtual-art-123',
-  fromMetaverse: 'art-gallery',
-  toMetaverse: 'gaming-world',
-  assetType: 'virtual-art'
-});
-
-// Execute the routing
-const tx = await solr.executeRouting(route);
-console.log('Asset routed successfully!');`,
-
-  'attestation-creation': `// Create an attestation for asset authenticity
-const attestation = await solr.createAttestation({
-  assetId: 'gaming-item-456',
-  attestationType: 'authenticity',
-  value: 'verified-original',
-  validUntil: Date.now() + 365 * 24 * 60 * 60 * 1000
-});
-
-console.log('Attestation created:', attestation.id);`,
-
-  'experience-composition': `// Compose a virtual experience
-const experience = await solr.composeExperience({
-  name: 'Virtual Art Exhibition',
-  description: 'Interactive art gallery experience',
-  components: ['art-display', 'social-interaction', 'commerce-hub'],
-  targetMetaverses: ['art-gallery', 'social-hub', 'commerce-mall']
-});
-
-console.log('Experience composed:', experience.id);`,
-
-  'cross-metaverse-bridge': `// Bridge assets between different metaverses
-const bridgeRequest = await solr.createBridgeRequest({
-  assetId: 'virtual-land-789',
-  fromChain: 'somnia-mainnet',
-  toChain: 'somnia-testnet',
-  destinationMetaverse: 'virtual-world-alpha'
-});
-
-// Monitor bridge status
-const status = await solr.getBridgeStatus(bridgeRequest.id);
-console.log('Bridge status:', status);`
-}
-
-const contractAddresses = {
-  'SomniaAssetRouter': '0x...', // To be populated after deployment
-  'SomniaObjectRegistry': '0x...',
-  'SomniaAttestationRegistry': '0x...',
-  'SomniaExperienceRegistry': '0x...',
-  'SomniaMarketplaceAdapter': '0x...',
-  'SomniaInteroperabilityBridge': '0x...',
-  'SomniaAccessControl': '0x...',
-  'SomniaFeeManager': '0x...',
-  'SomniaEmergencyController': '0x...'
-}
-
 export default function DeveloperDocs() {
-  const [activeSection, setActiveSection] = useState('getting-started')
+  const [openSections, setOpenSections] = useState<string[]>(['getting-started'])
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
 
-  const copyToClipboard = async (code: string, exampleId: string) => {
+  const toggleSection = (sectionId: string) => {
+    setOpenSections(prev => 
+      prev.includes(sectionId) 
+        ? prev.filter(id => id !== sectionId)
+        : [...prev, sectionId]
+    )
+  }
+
+  const copyToClipboard = async (text: string, sectionId: string) => {
     try {
-      await navigator.clipboard.writeText(code)
-      setCopiedCode(exampleId)
+      await navigator.clipboard.writeText(text)
+      setCopiedCode(sectionId)
       setTimeout(() => setCopiedCode(null), 2000)
     } catch (err) {
-      console.error('Failed to copy code:', err)
+      console.error('Failed to copy:', err)
     }
   }
 
+  const renderMarkdown = (content: string) => {
+    return content.split('\n').map((line, index) => {
+      if (line.startsWith('# ')) {
+        return <h1 key={index} className="text-2xl font-bold text-white mb-4">{line.substring(2)}</h1>
+      }
+      if (line.startsWith('## ')) {
+        return <h2 key={index} className="text-xl font-semibold text-white mb-3 mt-6">{line.substring(3)}</h2>
+      }
+      if (line.startsWith('### ')) {
+        return <h3 key={index} className="text-lg font-semibold text-white mb-2 mt-4">{line.substring(4)}</h3>
+      }
+      if (line.startsWith('```')) {
+        const codeBlock = content.split('```')[Math.floor(index / 2) + 1]
+        if (codeBlock) {
+          return (
+            <div key={index} className="relative my-4">
+              <pre className="bg-gray-800 rounded-lg p-4 overflow-x-auto text-sm text-gray-200">
+                <code>{codeBlock}</code>
+              </pre>
+              <button
+                onClick={() => copyToClipboard(codeBlock, `code-${index}`)}
+                className="absolute top-2 right-2 p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                {copiedCode === `code-${index}` ? (
+                  <CheckCircle className="w-4 h-4 text-green-400" />
+                ) : (
+                  <FileText className="w-4 h-4 text-gray-400" />
+                )}
+              </button>
+            </div>
+          )
+        }
+        return null
+      }
+      if (line.trim() === '') {
+        return <div key={index} className="h-4" />
+      }
+      return <p key={index} className="text-gray-300 leading-relaxed mb-2">{line}</p>
+    })
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div 
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="text-4xl font-bold text-white mb-4">Developer Documentation</h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Integrate your metaverse applications with SOLR&apos;s comprehensive asset routing and interoperability infrastructure
-          </p>
-        </motion.div>
+    <div className="max-w-6xl mx-auto px-6 py-8">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="text-center mb-12"
+      >
+        <h1 className="text-4xl font-bold text-white mb-4">Developer Documentation</h1>
+        <p className="text-slate-300 mb-4">
+                  Somnia&apos;s DeFi ecosystem provides comprehensive smart contracts for trading, lending, staking, and governance.
+                </p>
+      </motion.div>
 
-        {/* Navigation */}
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-        >
-          {sections.map((section) => (
+      {/* Documentation Sections */}
+      <div className="space-y-6">
+        {sections.map((section, index) => (
+          <motion.div
+            key={section.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: index * 0.1 }}
+            className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 overflow-hidden"
+          >
             <button
-              key={section.id}
-              onClick={() => setActiveSection(section.id)}
-              className={`p-6 rounded-xl border transition-all duration-300 text-left ${
-                activeSection === section.id
-                  ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'
-                  : 'bg-gray-800/30 border-gray-700 text-gray-300 hover:border-blue-500/30 hover:bg-gray-800/50'
-              }`}
+              onClick={() => toggleSection(section.id)}
+              className="w-full flex items-center justify-between p-6 text-left hover:bg-gray-700/50 transition-colors"
             >
-              <div className="flex items-center space-x-3 mb-3">
-                <section.icon className="w-6 h-6" />
-                <h3 className="font-semibold">{section.title}</h3>
+              <div className="flex items-center space-x-3">
+                <section.icon className="w-6 h-6 text-blue-400" />
+                <h2 className="text-xl font-semibold text-white">{section.title}</h2>
               </div>
-              <p className="text-sm opacity-80">{section.description}</p>
+              {openSections.includes(section.id) ? (
+                <ArrowRight className="w-5 h-5 text-gray-400" />
+              ) : (
+                <ArrowRight className="w-5 h-5 text-gray-400" />
+              )}
             </button>
-          ))}
-        </motion.div>
-
-        {/* Content Sections */}
-        <div className="space-y-12">
-          {/* Getting Started */}
-          {activeSection === 'getting-started' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-8"
-            >
-              <h2 className="text-3xl font-bold text-white mb-6">Getting Started with SOLR</h2>
-              
-              <div className="space-y-8">
-                <div>
-                  <h3 className="text-xl font-semibold text-blue-400 mb-4">1. Installation</h3>
-                  <div className="bg-gray-900 rounded-lg p-4 border border-gray-600">
-                    <code className="text-green-400">npm install @solr/metaverse-sdk</code>
-                  </div>
+            
+            {openSections.includes(section.id) && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="px-6 pb-6"
+              >
+                <div className="prose prose-invert max-w-none">
+                  {renderMarkdown(section.content)}
                 </div>
-
-                <div>
-                  <h3 className="text-xl font-semibold text-blue-400 mb-4">2. Basic Setup</h3>
-                  <div className="bg-gray-900 rounded-lg p-4 border border-gray-600">
-                    <pre className="text-sm text-gray-300">
-{`import { SolrSDK } from '@solr/metaverse-sdk';
-
-// Initialize with your provider
-const solr = new SolrSDK({
-  rpcUrl: 'https://testnet-rpc.somnia.network',
-  chainId: 50312,
-  contracts: contractAddresses
-});`}
-                    </pre>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-xl font-semibold text-blue-400 mb-4">3. Quick Start Example</h3>
-                  <div className="bg-gray-900 rounded-lg p-4 border border-gray-600">
-                    <pre className="text-sm text-gray-300">
-{`// Route a virtual asset
-const route = await solr.routeAsset({
-  assetId: 'my-virtual-art',
-  fromMetaverse: 'art-gallery',
-  toMetaverse: 'gaming-world'
-});
-
-console.log('Best route found:', route);`}
-                    </pre>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Smart Contracts */}
-          {activeSection === 'smart-contracts' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-8"
-            >
-              <h2 className="text-3xl font-bold text-white mb-6">Smart Contract Ecosystem</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                {Object.entries(contractAddresses).map(([name, address]) => (
-                  <div key={name} className="bg-gray-900 rounded-lg p-4 border border-gray-600">
-                    <h4 className="font-semibold text-blue-400 mb-2">{name}</h4>
-                    <div className="flex items-center space-x-2">
-                      <code className="text-sm text-gray-300 flex-1">{address}</code>
-                      <button 
-                        onClick={() => copyToClipboard(address, name)}
-                        className="p-2 hover:bg-gray-700 rounded transition-colors"
-                      >
-                        {copiedCode === name ? (
-                          <CheckCircle className="w-4 h-4 text-green-400" />
-                        ) : (
-                          <Copy className="w-4 h-4 text-gray-400" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-xl font-semibold text-blue-400 mb-3">Core Contracts</h3>
-                  <ul className="space-y-2 text-gray-300">
-                    <li>• <strong>SomniaAssetRouter:</strong> Main routing engine for all ecosystem operations</li>
-                    <li>• <strong>SomniaObjectRegistry:</strong> Virtual object management and ownership</li>
-                    <li>• <strong>SomniaAttestationRegistry:</strong> Asset authenticity verification</li>
-                    <li>• <strong>SomniaExperienceRegistry:</strong> Virtual experience composition</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-xl font-semibold text-blue-400 mb-3">Infrastructure Contracts</h3>
-                  <ul className="space-y-2 text-gray-300">
-                    <li>• <strong>SomniaAccessControl:</strong> Role-based permissions and security</li>
-                    <li>• <strong>SomniaFeeManager:</strong> Fee collection and revenue distribution</li>
-                    <li>• <strong>SomniaEmergencyController:</strong> Safety mechanisms and recovery</li>
-                  </ul>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Somnia Protocols */}
-          {activeSection === 'somnia-protocols' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-8"
-            >
-              <h2 className="text-3xl font-bold text-white mb-6">Somnia Protocol Integration</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-6">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <Shield className="w-8 h-8 text-blue-400" />
-                    <h3 className="text-xl font-semibold text-blue-300">SOM0 Protocol</h3>
-                  </div>
-                  <p className="text-gray-300 mb-4">
-                    Asset interoperability and commerce protocols for cross-application object sharing
-                  </p>
-                  <ul className="space-y-2 text-sm text-gray-300">
-                    <li>• Object Protocol for virtual asset management</li>
-                    <li>• Attestation Protocol for authenticity verification</li>
-                    <li>• Marketplace Protocol for cross-application commerce</li>
-                  </ul>
-                </div>
-
-                <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-6">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <Zap className="w-8 h-8 text-purple-400" />
-                    <h3 className="text-xl font-semibold text-purple-300">SOM1 Protocol</h3>
-                  </div>
-                  <p className="text-gray-300 mb-4">
-                    Virtual world composition and component-based experience building
-                  </p>
-                  <ul className="space-y-2 text-sm text-gray-300">
-                    <li>• Entity-Component-System architecture</li>
-                    <li>• Dynamic NFT evolution</li>
-                    <li>• Composable virtual world components</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="bg-gray-900 rounded-lg p-6 border border-gray-600">
-                <h3 className="text-lg font-semibold text-white mb-4">Protocol Integration Example</h3>
-                <pre className="text-sm text-gray-300">
-{`// Integrate with SOM0 Object Protocol
-const objectRegistry = await solr.getContract('SomniaObjectRegistry');
-
-// Register a virtual object
-await objectRegistry.registerVirtualObject(
-  'my-virtual-art',
-  'ipfs://metadata.json',
-  'virtual-art'
-);
-
-// Create an attestation via SOM0
-const attestationRegistry = await solr.getContract('SomniaAttestationRegistry');
-await attestationRegistry.createAttestation(
-  'my-virtual-art',
-  'authenticity',
-  'verified-original'
-);`}
-                </pre>
-              </div>
-            </motion.div>
-          )}
-
-          {/* API Reference */}
-          {activeSection === 'api-reference' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-8"
-            >
-              <h2 className="text-3xl font-bold text-white mb-6">API Reference</h2>
-              
-              <div className="space-y-8">
-                <div>
-                  <h3 className="text-xl font-semibold text-blue-400 mb-4">Asset Routing</h3>
-                  <div className="bg-gray-900 rounded-lg p-4 border border-gray-600">
-                    <pre className="text-sm text-gray-300">
-{`solr.routeAsset(options: RouteAssetOptions): Promise<Route>
-
-interface RouteAssetOptions {
-  assetId: string;
-  fromMetaverse: string;
-  toMetaverse: string;
-  assetType?: string;
-  amount?: number;
-}`}
-                    </pre>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-xl font-semibold text-blue-400 mb-4">Attestation Management</h3>
-                  <div className="bg-gray-900 rounded-lg p-4 border border-gray-600">
-                    <pre className="text-sm text-gray-300">
-{`solr.createAttestation(options: CreateAttestationOptions): Promise<Attestation>
-
-interface CreateAttestationOptions {
-  assetId: string;
-  attestationType: string;
-  value: string;
-  validUntil: number;
-}`}
-                    </pre>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-xl font-semibold text-blue-400 mb-4">Experience Composition</h3>
-                  <div className="bg-gray-900 rounded-lg p-4 border border-gray-600">
-                    <pre className="text-sm text-gray-300">
-{`solr.composeExperience(options: ComposeExperienceOptions): Promise<Experience>
-
-interface ComposeExperienceOptions {
-  name: string;
-  description: string;
-  components: string[];
-  targetMetaverses: string[];
-}`}
-                    </pre>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Code Examples */}
-          {activeSection === 'examples' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-8"
-            >
-              <h2 className="text-3xl font-bold text-white mb-6">Code Examples</h2>
-              
-              <div className="space-y-8">
-                {Object.entries(codeExamples).map(([exampleId, code]) => (
-                  <div key={exampleId} className="bg-gray-900 rounded-lg border border-gray-600">
-                    <div className="flex items-center justify-between p-4 border-b border-gray-600">
-                      <h3 className="text-lg font-semibold text-blue-400 capitalize">
-                        {exampleId.replace('-', ' ')}
-                      </h3>
-                      <button 
-                        onClick={() => copyToClipboard(code, exampleId)}
-                        className="flex items-center space-x-2 px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
-                      >
-                        {copiedCode === exampleId ? (
-                          <>
-                            <CheckCircle className="w-4 h-4 text-green-400" />
-                            <span className="text-green-400">Copied!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-4 h-4" />
-                            <span>Copy</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                    <pre className="p-4 text-sm text-gray-300 overflow-x-auto">
-                      <code>{code}</code>
-                    </pre>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Security */}
-          {activeSection === 'security' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-8"
-            >
-              <h2 className="text-3xl font-bold text-white mb-6">Security & Best Practices</h2>
-              
-              <div className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
-                    <h3 className="text-xl font-semibold text-red-300 mb-4">Security Considerations</h3>
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      <li>• Always verify contract addresses before interaction</li>
-                      <li>• Implement proper access control in your applications</li>
-                      <li>• Use secure random number generation for critical operations</li>
-                      <li>• Regularly audit your integration code</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-6">
-                    <h3 className="text-xl font-semibold text-green-300 mb-4">Best Practices</h3>
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      <li>• Implement proper error handling and fallbacks</li>
-                      <li>• Use event listeners for transaction monitoring</li>
-                      <li>• Test thoroughly on testnet before mainnet</li>
-                      <li>• Follow the principle of least privilege</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="bg-gray-900 rounded-lg p-6 border border-gray-600">
-                  <h3 className="text-lg font-semibold text-white mb-4">Security Checklist</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                      'Verify contract addresses',
-                      'Implement access controls',
-                      'Use secure random generation',
-                      'Handle errors gracefully',
-                      'Monitor transactions',
-                      'Test on testnet',
-                      'Audit integration code',
-                      'Follow security guidelines'
-                    ].map((item, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-400" />
-                        <span className="text-gray-300">{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </div>
-
-        {/* Footer CTA */}
-        <motion.div 
-          className="text-center mt-16"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.7 }}
-        >
-          <h3 className="text-2xl font-bold text-white mb-4">Ready to Build?</h3>
-          <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-            Start integrating with SOLR today and unlock the full potential of cross-metaverse asset routing and interoperability
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="btn-primary px-8 py-3">
-              <Code className="w-5 h-5 mr-2" />
-              View GitHub Repository
-            </button>
-            <button className="btn-secondary px-8 py-3">
-              <ExternalLink className="w-5 h-5 mr-2" />
-              Join Developer Community
-            </button>
-          </div>
-        </motion.div>
+              </motion.div>
+            )}
+          </motion.div>
+        ))}
       </div>
+
+      {/* Quick Links */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.8 }}
+        className="mt-12 text-center"
+      >
+        <h3 className="text-2xl font-bold text-white mb-6">Quick Links</h3>
+        <div className="flex flex-wrap justify-center gap-4">
+          {DEFI_PROTOCOLS.map((protocol) => (
+            <a
+              key={protocol.name}
+              href={`/protocols/${protocol.name.toLowerCase()}`}
+              className="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-3 text-white transition-colors"
+            >
+              <span className="text-xl">{protocol.icon}</span>
+              <span>{protocol.name}</span>
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          ))}
+        </div>
+      </motion.div>
     </div>
   )
 } 

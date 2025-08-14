@@ -1,185 +1,122 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { 
-  Globe, 
-  Github, 
-  Twitter, 
-  MessageSquare, 
-  BookOpen,
-  Shield,
-  Zap
-} from 'lucide-react'
+import { Globe, RefreshCw, TrendingUp, Wallet, Users, BarChart3, BookOpen, Github, Twitter, MessageSquare } from 'lucide-react'
 
-const footerLinks = {
+const navigation = {
   product: [
-    { name: 'Asset Router', href: '/router' },
-    { name: 'Metaverses', href: '/metaverses' },
-    { name: 'Analytics', href: '/analytics' },
-    { name: 'Documentation', href: '/docs' }
+    { name: 'Trade', href: '/trade', icon: RefreshCw },
+    { name: 'Lend', href: '/lend', icon: TrendingUp },
+    { name: 'Stake', href: '/stake', icon: Wallet },
+    { name: 'Governance', href: '/governance', icon: Users },
+    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   ],
   protocols: [
-    { name: 'SOM0 Protocol', href: 'https://docs.somnia.network/ecosystem/protocols/som0' },
-    { name: 'SOM1 Protocol', href: 'https://docs.somnia.network/ecosystem/protocols/som1' },
-    { name: 'Somnia Network', href: 'https://somnia.network' },
-    { name: 'Developer Docs', href: 'https://docs.somnia.network' }
+    { name: 'SomniaAMM', href: '/protocols/amm', description: 'Automated Market Maker' },
+    { name: 'SomniaLending', href: '/protocols/lending', description: 'Lending & Borrowing' },
+    { name: 'SomniaStaking', href: '/protocols/staking', description: 'Staking & Rewards' },
+    { name: 'SomniaGovernance', href: '/protocols/governance', description: 'Community Governance' },
   ],
   community: [
-    { name: 'Discord', href: '#', icon: MessageSquare },
-    { name: 'Twitter', href: '#', icon: Twitter },
-    { name: 'GitHub', href: '#', icon: Github },
-    { name: 'Blog', href: '#', icon: BookOpen }
+    { name: 'Documentation', href: '/docs', icon: BookOpen },
+    { name: 'GitHub', href: 'https://github.com', icon: Github },
+    { name: 'Twitter', href: 'https://twitter.com', icon: Twitter },
+    { name: 'Discord', href: 'https://discord.gg', icon: MessageSquare },
   ]
 }
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 border-t border-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer className="bg-slate-900 border-t border-slate-800/50">
+      <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand Section */}
+          {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <motion.div 
-              className="flex items-center space-x-3 mb-4"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <Globe className="w-7 h-7 text-white" />
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Globe className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="text-xl font-bold text-white">SOLR</h3>
-                <p className="text-sm text-gray-400">Somnia Asset & Experience Router</p>
+                <p className="text-sm text-slate-400">Somnia DeFi Ecosystem</p>
               </div>
-            </motion.div>
-            
-            <motion.p 
-              className="text-gray-300 mb-6 max-w-md"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-            >
-              The universal bridge for virtual assets and experiences across Somnia&apos;s metaverse ecosystem. 
-              Enable cross-application interoperability and composable virtual worlds.
-            </motion.p>
-
-            <motion.div 
-              className="flex items-center space-x-4"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <div className="flex items-center space-x-2 text-sm text-gray-400">
-                <Shield className="w-4 h-4 text-green-400" />
-                <span>Secure Routing</span>
+            </div>
+            <p className="text-slate-300 mb-6 max-w-md">
+              The complete DeFi ecosystem for Somnia Network. Trade, lend, stake, and govern 
+              with the first comprehensive DeFi platform built from the ground up.
+            </p>
+            <div className="flex space-x-4">
+              <div className="flex items-center space-x-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-sm border border-emerald-500/30">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                <span>Secure Trading</span>
               </div>
-              <div className="flex items-center space-x-2 text-sm text-gray-400">
-                <Zap className="w-4 h-4 text-blue-400" />
+              <div className="flex items-center space-x-2 bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm border border-blue-500/30">
+                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                 <span>Fast Execution</span>
               </div>
-            </motion.div>
+            </div>
           </div>
 
-          {/* Product Links */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
-            <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
+          {/* Product */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-400 tracking-wider uppercase mb-4">
               Product
-            </h4>
+            </h3>
             <ul className="space-y-3">
-              {footerLinks.product.map((link) => (
-                <li key={link.name}>
+              {navigation.product.map((item) => (
+                <li key={item.name}>
                   <a
-                    href={link.href}
-                    className="text-gray-300 hover:text-white transition-colors duration-200"
+                    href={item.href}
+                    className="group flex items-center space-x-2 text-slate-300 hover:text-white transition-all duration-200"
                   >
-                    {link.name}
+                    <item.icon className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                    <span className="group-hover:text-blue-300 transition-colors duration-200">{item.name}</span>
                   </a>
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </div>
 
-          {/* Protocol Links */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
+          {/* Protocols */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-400 tracking-wider uppercase mb-4">
               Protocols
-            </h4>
+            </h3>
             <ul className="space-y-3">
-              {footerLinks.protocols.map((link) => (
-                <li key={link.name}>
+              {navigation.protocols.map((item) => (
+                <li key={item.name}>
                   <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-300 hover:text-white transition-colors duration-200"
+                    href={item.href}
+                    className="group text-slate-300 hover:text-white transition-all duration-200"
                   >
-                    {link.name}
+                    <div className="font-medium group-hover:text-blue-300 transition-colors duration-200">{item.name}</div>
+                    <div className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors duration-200">{item.description}</div>
                   </a>
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </div>
         </div>
 
         {/* Bottom Section */}
-        <motion.div 
-          className="border-t border-gray-800 mt-12 pt-8"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-        >
+        <div className="mt-12 pt-8 border-t border-slate-800/50">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="text-sm text-gray-400">
-              © 2025 SOLR - Somnia Asset & Experience Router. All rights reserved.
+            <div className="text-slate-400 text-sm">
+              © 2024 SOLR - Somnia DeFi Ecosystem. All rights reserved.
             </div>
-            
-            <div className="flex items-center space-x-6">
-              {footerLinks.community.map((link) => (
+            <div className="flex space-x-6">
+              {navigation.community.map((item) => (
                 <a
-                  key={link.name}
-                  href={link.href}
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                  title={link.name}
+                  key={item.name}
+                  href={item.href}
+                  className="group text-slate-400 hover:text-white transition-all duration-200 p-2 hover:bg-slate-800/50 rounded-lg"
+                  title={item.name}
                 >
-                  <link.icon className="w-5 h-5" />
+                  <item.icon className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
                 </a>
               ))}
             </div>
           </div>
-        </motion.div>
-
-        {/* Additional Info */}
-        <motion.div 
-          className="mt-8 pt-6 border-t border-gray-800"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-        >
-          <div className="text-center">
-            <p className="text-xs text-gray-500 mb-2">
-              Built on Somnia Testnet (Chain ID: 50312)
-            </p>
-            <p className="text-xs text-gray-500">
-              Powered by SOM0 & SOM1 protocols for cross-metaverse interoperability
-            </p>
-          </div>
-        </motion.div>
+        </div>
       </div>
     </footer>
   )

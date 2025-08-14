@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
-import { TOKENS } from '../constants'
+import { DEFI_TOKENS } from '../constants'
 
 export const useTokenBalance = (tokenSymbol: string) => {
   const [balance, setBalance] = useState('0')
@@ -21,7 +21,7 @@ export const useTokenBalance = (tokenSymbol: string) => {
         setBalance('0')
         
         // Example of what the real implementation would look like:
-        // const token = TOKENS[tokenSymbol as keyof typeof TOKENS]
+        // const token = DEFI_TOKENS.find(t => t.symbol === tokenSymbol)
         // const balance = await readContract({
         //   address: token.address as `0x${string}`,
         //   abi: erc20ABI,
@@ -41,9 +41,9 @@ export const useTokenBalance = (tokenSymbol: string) => {
     fetchBalance()
   }, [address, isConnected, tokenSymbol])
 
-  const token = TOKENS[tokenSymbol as keyof typeof TOKENS]
+  const token = DEFI_TOKENS.find(t => t.symbol === tokenSymbol)
   const formattedBalance = token ? parseFloat(balance).toFixed(4) : '0'
-  const usdValue = token ? parseFloat(balance) * token.price : 0
+  const usdValue = 0 // TODO: Implement price fetching when available
 
   return {
     balance,

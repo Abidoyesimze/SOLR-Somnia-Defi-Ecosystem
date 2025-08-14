@@ -1,11 +1,11 @@
 import Header from '../components/Header'
-import AnalyticsDashboard from '../components/AnalyticsDashboard'
+import DeveloperDocs from '../components/DeveloperDocs'
 
-export default function AnalyticsPage() {
+export default function DocsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
       <Header />
-      <AnalyticsDashboard />
+      <DeveloperDocs />
     </div>
   )
-}
+} 

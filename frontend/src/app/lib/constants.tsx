@@ -7,189 +7,157 @@ export const SOMNIA_CONFIG = {
   NATIVE_DECIMALS: 18
 }
 
-// Virtual Asset Types for Metaverse Routing
-export const VIRTUAL_OBJECT_TYPES = [
-  'virtual-art',
-  'gaming-item', 
-  'virtual-land',
-  'experience',
-  'attestation',
-  'component',
-  'avatar',
-  'virtual-property',
-  'digital-collectible',
-  'virtual-currency'
+// DeFi Token Types
+export const DEFI_TOKENS = [
+  { id: 'som', name: 'Somnia', symbol: 'SOM', icon: '🔵', type: 'Native Token', decimals: 18 },
+  { id: 'somg', name: 'Somnia Governance', symbol: 'SOMG', icon: '🏛️', type: 'Governance Token', decimals: 18 },
+  { id: 'usdc', name: 'USD Coin', symbol: 'USDC', icon: '💵', type: 'Stablecoin', decimals: 6 },
+  { id: 'weth', name: 'Wrapped Ether', symbol: 'WETH', icon: '⚡', type: 'Wrapped Token', decimals: 18 }
 ] as const
 
-// Attestation Types for Asset Verification
-export const ATTESTATION_TYPES = [
-  'authenticity',
-  'provenance',
-  'quality',
-  'ownership',
-  'licensing',
-  'compliance',
-  'performance',
-  'sustainability'
-] as const
-
-// Metaverse Destinations
-export const METAVERSE_DESTINATIONS = [
+// DeFi Protocols
+export const DEFI_PROTOCOLS = [
   {
-    id: 'art-gallery',
-    name: 'Art Gallery Metaverse',
-    icon: '🖼️',
-    type: 'Creative Space',
-    description: 'Digital art exhibitions and creative experiences'
-  },
-  {
-    id: 'gaming-world',
-    name: 'Gaming World',
-    icon: '🎮',
-    type: 'Interactive Gaming',
-    description: 'Immersive gaming experiences and virtual worlds'
-  },
-  {
-    id: 'social-hub',
-    name: 'Social Hub',
-    icon: '👥',
-    type: 'Community Space',
-    description: 'Social interactions and community building'
-  },
-  {
-    id: 'commerce-mall',
-    name: 'Commerce Mall',
-    icon: '🛍️',
-    type: 'Trading Hub',
-    description: 'Virtual commerce and asset trading'
-  },
-  {
-    id: 'education-center',
-    name: 'Education Center',
-    icon: '📚',
-    type: 'Learning Space',
-    description: 'Educational experiences and knowledge sharing'
-  },
-  {
-    id: 'entertainment-zone',
-    name: 'Entertainment Zone',
-    icon: '🎭',
-    type: 'Media Hub',
-    description: 'Entertainment and media experiences'
-  }
-] as const
-
-// Somnia Protocols (SOM0 & SOM1)
-export const PROTOCOLS = [
-  {
-    name: 'SOM0',
-    type: 'Asset Interoperability',
-    description: 'Object Protocol, Attestation Protocol, Marketplace Protocol',
+    name: 'SomniaAMM',
+    type: 'Automated Market Maker',
+    description: 'Uniswap-like DEX for token trading',
     features: [
-      'Cross-application objects',
-      'Authenticity verification', 
-      'Global commerce',
-      'Asset ownership management',
-      'Interoperable marketplaces'
+      'Token swapping',
+      'Liquidity provision',
+      'Automated pricing',
+      'Fee collection',
+      'Pool management'
     ],
-    icon: '🌐',
+    icon: '🔄',
+    color: 'bg-green-600',
+    status: 'active',
+    tvl: '$0', // To be updated after deployment
+    volume24h: '$0',
+    pools: 0
+  },
+  {
+    name: 'SomniaLending',
+    type: 'Lending & Borrowing',
+    description: 'Supply and borrow with collateral',
+    features: [
+      'Supply tokens',
+      'Borrow against collateral',
+      'Interest earning',
+      'Liquidation system',
+      'Risk management'
+    ],
+    icon: '🏦',
     color: 'bg-blue-600',
-    status: 'active'
+    status: 'active',
+    tvl: '$0',
+    volume24h: '$0',
+    pools: 0
   },
   {
-    name: 'SOM1',
-    type: 'Virtual World Composition',
-    description: 'Entity-Component-System for composable virtual worlds',
+    name: 'SomniaStaking',
+    type: 'Staking & Rewards',
+    description: 'Stake tokens to earn rewards',
     features: [
-      'Dynamic NFTs',
-      'Autonomous objects',
-      'Component registries',
-      'Experience composition',
-      'Virtual world building'
+      'Multiple staking tiers',
+      'Reward multipliers',
+      'Flexible staking',
+      'Early withdrawal penalties',
+      'Governance rewards'
     ],
-    icon: '🎮',
+    icon: '💰',
     color: 'bg-purple-600',
-    status: 'active'
+    status: 'active',
+    tvl: '$0',
+    volume24h: '$0',
+    pools: 0
+  },
+  {
+    name: 'SomniaGovernance',
+    type: 'Governance & Voting',
+    description: 'Community governance token',
+    features: [
+      'Proposal creation',
+      'Voting system',
+      'Token distribution',
+      'Community control',
+      'Protocol upgrades'
+    ],
+    icon: '🏛️',
+    color: 'bg-yellow-600',
+    status: 'active',
+    tvl: '$0',
+    volume24h: '$0',
+    pools: 0
   }
 ] as const
 
 // Smart Contract Addresses (To be populated after deployment)
 export const CONTRACTS = {
-  SOMNIA_ASSET_ROUTER: '0x...', // Main SOLR router
-  SOMNIA_OBJECT_REGISTRY: '0x...', // SOM0 Object Protocol
-  SOMNIA_ATTESTATION_REGISTRY: '0x...', // SOM0 Attestation Protocol
-  SOMNIA_EXPERIENCE_REGISTRY: '0x...', // SOM1 Experience Protocol
-  SOMNIA_MARKETPLACE_ADAPTER: '0x...', // Cross-application commerce
-  SOMNIA_INTEROPERABILITY_BRIDGE: '0x...', // Cross-metaverse routing
-  SOMNIA_ACCESS_CONTROL: '0x...', // Role-based permissions
-  SOMNIA_FEE_MANAGER: '0x...', // Fee collection & distribution
-  SOMNIA_EMERGENCY_CONTROLLER: '0x...' // Safety & recovery
+  SOMNIA_GOVERNANCE: '0x...', // Governance token (SOMG)
+  SOMNIA_AMM: '0x...', // AMM DEX
+  SOMNIA_LENDING: '0x...', // Lending protocol
+  SOMNIA_STAKING: '0x...' // Staking protocol
 } as const
 
-// Virtual Asset Categories
-export const ASSET_CATEGORIES = [
-  {
-    id: 'creative',
-    name: 'Creative Assets',
-    icon: '🎨',
-    examples: ['Digital Art', 'Music', 'Videos', '3D Models']
-  },
-  {
-    id: 'gaming',
-    name: 'Gaming Assets',
-    icon: '🎮',
-    examples: ['Characters', 'Weapons', 'Vehicles', 'Maps']
-  },
-  {
-    id: 'real-estate',
-    name: 'Virtual Real Estate',
-    icon: '🏠',
-    examples: ['Land', 'Buildings', 'Stores', 'Venues']
-  },
-  {
-    id: 'experiences',
-    name: 'Virtual Experiences',
-    icon: '🌟',
-    examples: ['Events', 'Tours', 'Workshops', 'Performances']
-  },
-  {
-    id: 'collectibles',
-    name: 'Digital Collectibles',
-    icon: '💎',
-    examples: ['NFTs', 'Trading Cards', 'Memorabilia', 'Rare Items']
-  }
+// DeFi Categories
+export const DEFI_CATEGORIES = [
+  { id: 'trading', name: 'Trading', icon: '🔄', description: 'Swap tokens on AMM', route: '/trade' },
+  { id: 'lending', name: 'Lending', icon: '🏦', description: 'Supply and borrow', route: '/lend' },
+  { id: 'staking', name: 'Staking', icon: '💰', description: 'Earn rewards', route: '/stake' },
+  { id: 'governance', name: 'Governance', icon: '🏛️', description: 'Vote on proposals', route: '/governance' },
+  { id: 'yield', name: 'Yield Farming', icon: '🌾', description: 'Maximize returns', route: '/stake' },
+  { id: 'portfolio', name: 'Portfolio', icon: '📊', description: 'Track investments', route: '/analytics' }
 ] as const
 
-// Routing Fee Structure
-export const ROUTING_FEES = {
-  STANDARD: 0.5, // 0.5% for standard asset routing
-  PREMIUM: 1.0,  // 1.0% for premium services
-  BRIDGE: 2.0,   // 2.0% for cross-chain bridging
-  ATTESTATION: 0.25, // 0.25% for attestation services
-  EXPERIENCE: 0.75   // 0.75% for experience composition
-} as const
+// Trading Pairs
+export const TRADING_PAIRS = [
+  { id: 'som-somg', token0: 'SOM', token1: 'SOMG', icon0: '🔵', icon1: '🏛️', volume24h: '$0' },
+  { id: 'som-usdc', token0: 'SOM', token1: 'USDC', icon0: '🔵', icon1: '💵', volume24h: '$0' },
+  { id: 'somg-usdc', token0: 'SOMG', token1: 'USDC', icon0: '🏛️', icon1: '💵', volume24h: '$0' }
+] as const
+
+// Staking Tiers
+export const STAKING_TIERS = [
+  { name: 'Bronze', minStake: '1,000', maxStake: '10,000', multiplier: '1x', lockDuration: '30 days', penalty: '5%' },
+  { name: 'Silver', minStake: '10,000', maxStake: '100,000', multiplier: '1.2x', lockDuration: '90 days', penalty: '3%' },
+  { name: 'Gold', minStake: '100,000', maxStake: '1,000,000', multiplier: '1.5x', lockDuration: '180 days', penalty: '2%' }
+] as const
+
+// Lending Markets
+export const LENDING_MARKETS = [
+  { token: 'SOM', supplyRate: '10%', borrowRate: '12%', totalSupply: '$0', totalBorrow: '$0', utilization: '0%' },
+  { token: 'SOMG', supplyRate: '8%', borrowRate: '10%', totalSupply: '$0', totalBorrow: '$0', utilization: '0%' },
+  { token: 'USDC', supplyRate: '5%', borrowRate: '7%', totalSupply: '$0', totalBorrow: '$0', utilization: '0%' }
+] as const
 
 // Network Configuration
 export const NETWORK_CONFIG = {
-  MAINNET: {
-    chainId: 1,
-    name: 'Somnia Mainnet',
-    rpcUrl: 'https://rpc.somnia.network',
-    explorerUrl: 'https://explorer.somnia.network'
-  },
-  TESTNET: {
-    chainId: 50312,
-    name: 'Somnia Testnet',
-    rpcUrl: 'https://testnet-rpc.somnia.network',
-    explorerUrl: 'https://testnet-explorer.somnia.network'
-  }
+  CHAIN_ID: 50312,
+  RPC_URL: 'https://testnet-rpc.somnia.network',
+  EXPLORER_URL: 'https://testnet-explorer.somnia.network',
+  BLOCK_TIME: 12, // seconds
+  CONFIRMATIONS: 1
 } as const
 
 // Default Settings
 export const DEFAULT_SETTINGS = {
-  AUTO_REFRESH_INTERVAL: 30000, // 30 seconds
-  MAX_SLIPPAGE: 5.0, // 5%
-  GAS_LIMIT_MULTIPLIER: 1.2,
-  DEFAULT_TIMEOUT: 300000 // 5 minutes
+  SLIPPAGE_TOLERANCE: 0.5, // 0.5%
+  GAS_LIMIT: 300000,
+  MAX_PRIORITY_FEE: 1.5, // gwei
+  AUTO_APPROVE: true,
+  SHOW_ZERO_BALANCES: false
 } as const
+
+// Fee Structure
+export const FEE_STRUCTURE = {
+  AMM_TRADING_FEE: 0.3, // 0.3%
+  AMM_LIQUIDITY_FEE: 0.2, // 0.2%
+  LENDING_ORIGINATION_FEE: 0.1, // 0.1%
+  STAKING_WITHDRAWAL_PENALTY: 0.05, // 5%
+  GOVERNANCE_PROPOSAL_FEE: 1000 // 1000 SOMG
+} as const
+
+// Legacy exports for backward compatibility
+export const TOKENS = DEFI_TOKENS
+export const PROTOCOLS = DEFI_PROTOCOLS
   
