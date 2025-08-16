@@ -1,0 +1,16 @@
+{
+  "network": "Somnia Testnet",
+  "deployer": "0x95e1CF9174AbD55E47b9EDa1b3f0F2ba0f4369a0",
+  "contracts": {
+    "WrappedSomnia": "0x37FcBDc9Ff829279Ad49dFFdDeDAa7B224B1b0B2",
+    "USDCToken": "0xA20E9Db778125527a53069f502292B2b02e3D7CF",
+    "SomniaLPToken": "0xE018246306b3e3AE88b618aD2c2E0Bc10A86AD65",
+    "TestTokenFaucet": "0x5908225583f89A3060D5f9eecbc0288fcEc2c512"
+  },
+  "deploymentTime": "2025-08-16T11:34:44.445Z",
+  "initialization": {
+    "faucetAuthorized": true,
+    "tokenOwnershipTransferred": true,
+    "basicFunctionalityTested": true
+  }
+}
