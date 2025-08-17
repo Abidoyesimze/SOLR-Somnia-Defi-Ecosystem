@@ -55,8 +55,8 @@ export function useAMM() {
       // Convert amount to wei
       const amountInWei = parseUnits(amountIn, 18)
       
-      // For now, use a mock calculation since we can't call the contract directly
-      // In production, you'd integrate with the actual contract
+      // For now, use a mock calculation since we need to deploy tokens first
+      // In production, you'd call getAmountOut on the AMM contract
       const mockRate = 0.85 // Mock exchange rate
       const calculatedAmount = parseFloat(amountIn) * mockRate
       const amountOutFormatted = calculatedAmount.toFixed(6)
