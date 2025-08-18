@@ -5,51 +5,56 @@ async function main() {
 
   const [deployer] = await ethers.getSigners();
   console.log("📝 Deploying contracts with account:", deployer.address);
-  console.log("💰 Account balance:", (await deployer.getBalance()).toString());
+  const balance = await deployer.provider.getBalance(deployer.address);
+  console.log("💰 Account balance:", ethers.formatEther(balance), "SOM");
 
   // Deploy Governance Token First
   console.log("\n🏛️  Deploying SomniaGovernance...");
   const SomniaGovernance = await ethers.getContractFactory("SomniaGovernance");
   const governanceToken = await SomniaGovernance.deploy();
-  await governanceToken.deployed();
-  console.log("✅ SomniaGovernance deployed to:", governanceToken.address);
+  await governanceToken.waitForDeployment();
+  const governanceAddress = await governanceToken.getAddress();
+  console.log("✅ SomniaGovernance deployed to:", governanceAddress);
 
   // Deploy AMM DEX
   console.log("\n🔄 Deploying SomniaAMM...");
   const SomniaAMM = await ethers.getContractFactory("SomniaAMM");
-  const amm = await SomniaAMM.deploy();
-  await amm.deployed();
-  console.log("✅ SomniaAMM deployed to:", amm.address);
+  const amm = await SomniaAMM.deploy(deployer.address);
+  await amm.waitForDeployment();
+  const ammAddress = await amm.getAddress();
+  console.log("✅ SomniaAMM deployed to:", ammAddress);
 
   // Deploy Lending Protocol
   console.log("\n🏦 Deploying SomniaLending...");
   const SomniaLending = await ethers.getContractFactory("SomniaLending");
   const lending = await SomniaLending.deploy();
-  await lending.deployed();
-  console.log("✅ SomniaLending deployed to:", lending.address);
+  await lending.waitForDeployment();
+  const lendingAddress = await lending.getAddress();
+  console.log("✅ SomniaLending deployed to:", lendingAddress);
 
   // Deploy Staking Protocol
   console.log("\n💰 Deploying SomniaStaking...");
   const SomniaStaking = await ethers.getContractFactory("SomniaStaking");
   const staking = await SomniaStaking.deploy();
-  await staking.deployed();
-  console.log("✅ SomniaStaking deployed to:", staking.address);
+  await staking.waitForDeployment();
+  const stakingAddress = await staking.getAddress();
+  console.log("✅ SomniaStaking deployed to:", stakingAddress);
 
   // Initialize contracts
   console.log("\n🔧 Initializing contracts...");
 
   // Whitelist governance token in all protocols
   console.log("📋 Whitelisting governance token...");
-  await amm.whitelistToken(governanceToken.address);
-  await lending.whitelistToken(governanceToken.address);
-  await staking.whitelistStakingToken(governanceToken.address);
-  await staking.whitelistRewardToken(governanceToken.address);
+  await amm.whitelistToken(governanceAddress);
+  await lending.whitelistToken(governanceAddress);
+  await staking.whitelistStakingToken(governanceAddress);
+  await staking.whitelistRewardToken(governanceAddress);
 
   // Create initial staking pool for governance token
   console.log("🏊 Creating initial staking pool...");
   await staking.createPool(
-    governanceToken.address, // staking token
-    governanceToken.address, // reward token
+    governanceAddress, // staking token
+    governanceAddress, // reward token
     1500, // 15% annual reward rate
     0, // min stake duration
     365 * 24 * 60 * 60 // max stake duration
@@ -58,7 +63,7 @@ async function main() {
   // Add staking tiers
   console.log("🏆 Adding staking tiers...");
   await staking.addStakingTier(
-    governanceToken.address,
+    governanceAddress,
     "Bronze",
     BigInt("1000000000000000000000"), // 1000 tokens min
     BigInt("10000000000000000000000"), // 10000 tokens max
@@ -68,7 +73,7 @@ async function main() {
   );
 
   await staking.addStakingTier(
-    governanceToken.address,
+    governanceAddress,
     "Silver",
     BigInt("10000000000000000000000"), // 10000 tokens min
     BigInt("100000000000000000000000"), // 100000 tokens max
@@ -78,7 +83,7 @@ async function main() {
   );
 
   await staking.addStakingTier(
-    governanceToken.address,
+    governanceAddress,
     "Gold",
     BigInt("100000000000000000000000"), // 100000 tokens min
     BigInt("1000000000000000000000000"), // 1M tokens max
@@ -90,7 +95,7 @@ async function main() {
   // Create initial lending market for governance token
   console.log("🏦 Creating initial lending market...");
   await lending.createMarket(
-    governanceToken.address,
+    governanceAddress,
     8000 // 80% collateral factor
   );
 
@@ -98,17 +103,17 @@ async function main() {
   console.log("💸 Funding protocols with initial governance tokens...");
   const initialFunding = BigInt("1000000000000000000000000"); // 1M tokens
 
-  await governanceToken.transfer(amm.address, initialFunding);
-  await governanceToken.transfer(lending.address, initialFunding);
-  await governanceToken.transfer(staking.address, initialFunding);
+  await governanceToken.transfer(ammAddress, initialFunding);
+  await governanceToken.transfer(lendingAddress, initialFunding);
+  await governanceToken.transfer(stakingAddress, initialFunding);
 
   console.log("\n🎉 Deployment Complete!");
   console.log("=".repeat(50));
   console.log("📋 Contract Addresses:");
-  console.log("🏛️  SomniaGovernance:", governanceToken.address);
-  console.log("🔄 SomniaAMM:", amm.address);
-  console.log("🏦 SomniaLending:", lending.address);
-  console.log("💰 SomniaStaking:", staking.address);
+  console.log("🏛️  SomniaGovernance:", governanceAddress);
+  console.log("🔄 SomniaAMM:", ammAddress);
+  console.log("🏦 SomniaLending:", lendingAddress);
+  console.log("💰 SomniaStaking:", stakingAddress);
   console.log("=".repeat(50));
 
   console.log("\n🔗 Next Steps:");
@@ -122,10 +127,10 @@ async function main() {
     network: "Somnia Testnet",
     deployer: deployer.address,
     contracts: {
-      SomniaGovernance: governanceToken.address,
-      SomniaAMM: amm.address,
-      SomniaLending: lending.address,
-      SomniaStaking: staking.address
+      SomniaGovernance: governanceAddress,
+      SomniaAMM: ammAddress,
+      SomniaLending: lendingAddress,
+      SomniaStaking: stakingAddress
     },
     deploymentTime: new Date().toISOString(),
     initialization: {

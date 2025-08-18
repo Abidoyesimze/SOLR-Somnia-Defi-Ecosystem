@@ -1,7 +1,33 @@
 {
-  "name": "hardhat-project",
+  "name": "somnia-defi-contracts",
+  "version": "1.0.0",
+  "description": "Complete DeFi ecosystem smart contracts for Somnia Network",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "deploy:defi": "hardhat run scripts/deploy-defi.js --network somniaTestnet",
+    "deploy:tokens": "hardhat run scripts/deploy-tokens.js --network somniaTestnet",
+    "deploy:all": "npm run deploy:defi && npm run deploy:tokens"
+  },
+  "keywords": [
+    "defi",
+    "somnia",
+    "blockchain",
+    "smart-contracts",
+    "amm",
+    "lending",
+    "staking",
+    "governance"
+  ],
+  "author": "SOLR Team",
+  "license": "MIT",
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "hardhat": "^2.26.3"
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "hardhat": "^2.19.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "dotenv": "^17.2.1"
   }
 }

@@ -15,23 +15,23 @@ import {
   Star,
   Rocket
 } from 'lucide-react'
-import { DEFI_PROTOCOLS, DEFI_CATEGORIES } from '../lib/constants'
+import { DEFI_PROTOCOLS, DEFI_CATEGORIES, TRADING_PAIRS } from '../lib/constants'
 import Header from './Header'
 import Footer from './Footer'
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 30 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6 }
-}
+  const fadeInUp = {
+    initial: { opacity: 0, y: 30 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.6 }
+  }
 
-const staggerContainer = {
-  animate: {
-    transition: {
-      staggerChildren: 0.1
+  const staggerContainer = {
+    animate: {
+      transition: {
+        staggerChildren: 0.1
+      }
     }
   }
-}
 
 export default function LandingPage() {
   const router = useRouter()
@@ -51,7 +51,7 @@ export default function LandingPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 1 }}
         >
-          <motion.div
+          <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -72,21 +72,21 @@ export default function LandingPage() {
             The <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Complete</span><br />
             DeFi Ecosystem for<br />
             <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Somnia Network</span>
-          </motion.h1>
-          
-          <motion.p 
+            </motion.h1>
+            
+            <motion.p 
             className="text-xl md:text-2xl text-slate-300 mb-12 max-w-4xl mx-auto leading-relaxed"
-            variants={fadeInUp}
+              variants={fadeInUp}
             initial="initial"
             animate="animate"
-          >
+            >
             Trade, lend, stake, and govern on Somnia&apos;s first comprehensive DeFi platform. 
             Built from the ground up for the Somnia ecosystem with institutional-grade security.
-          </motion.p>
-          
-          <motion.div 
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-            variants={fadeInUp}
+            </motion.p>
+            
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+              variants={fadeInUp}
             initial="initial"
             animate="animate"
           >
@@ -110,8 +110,51 @@ export default function LandingPage() {
               View Documentation
             </motion.button>
           </motion.div>
-        </motion.div>
+            </motion.div>
       </section>
+
+      {/* Trading Pairs Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        className="mb-16"
+      >
+        <h2 className="text-3xl font-bold text-white text-center mb-8">
+          Popular Trading Pairs
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {TRADING_PAIRS.map((pair, index) => (
+            <motion.div
+              key={pair.pair}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}
+              className="card card-hover p-6 text-center cursor-pointer"
+              onClick={() => router.push('/trade')}
+            >
+              <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r ${pair.color} flex items-center justify-center text-2xl font-bold text-white`}>
+                {pair.token0}/{pair.token1}
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">{pair.pair}</h3>
+              <div className="space-y-2 text-sm text-slate-300">
+                <div className="flex justify-between">
+                  <span>Liquidity:</span>
+                  <span className="text-emerald-400 font-medium">{pair.liquidity}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>24h Volume:</span>
+                  <span className="text-blue-400 font-medium">{pair.volume24h}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Fee:</span>
+                  <span className="text-purple-400 font-medium">{pair.fee}</span>
+              </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
 
       {/* Interactive Feature Cards Section */}
       <section className="px-6 py-24">
@@ -238,7 +281,7 @@ export default function LandingPage() {
               </motion.div>
             ))}
           </motion.div>
-        </div>
+                  </div>
       </section>
 
       {/* Animated Stats Cards */}
@@ -359,10 +402,10 @@ export default function LandingPage() {
                   transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
                 >
                   <stat.icon className="w-12 h-12 group-hover:scale-110 transition-transform duration-300" />
-                </motion.div>
+            </motion.div>
                 <div className="text-3xl font-bold text-white mb-2 group-hover:text-blue-300 transition-colors">{stat.value}</div>
                 <div className="text-slate-400 group-hover:text-slate-300 transition-colors">{stat.label}</div>
-              </motion.div>
+            </motion.div>
             ))}
           </motion.div>
         </div>
@@ -395,7 +438,7 @@ export default function LandingPage() {
           >
             {DEFI_CATEGORIES.map((category) => (
               <motion.div 
-                key={category.id}
+                key={category.name}
                 className="group bg-slate-800/40 backdrop-blur-sm rounded-xl border border-slate-700/50 p-8 hover:border-blue-500/50 hover:bg-slate-800/60 transition-all duration-300 cursor-pointer"
                 variants={fadeInUp}
                 transition={{ delay: 0.1 }}
@@ -448,10 +491,10 @@ export default function LandingPage() {
             whileInView="animate"
             viewport={{ once: true }}
           >
-            {DEFI_PROTOCOLS.map((protocol, index) => (
+            {Object.values(DEFI_PROTOCOLS).map((protocol, index) => (
               <motion.div 
                 key={protocol.name}
-                className={`${protocol.color} rounded-xl p-8 text-white group cursor-pointer relative overflow-hidden`}
+                className="bg-slate-800/40 rounded-xl p-8 text-white group cursor-pointer relative overflow-hidden"
                 variants={fadeInUp}
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ 
@@ -463,16 +506,16 @@ export default function LandingPage() {
                 onClick={() => {
                   // Navigate based on protocol name
                   switch(protocol.name) {
-                    case 'SomniaAMM':
+                    case 'Automated Market Maker':
                       router.push('/trade')
                       break
-                    case 'SomniaLending':
+                    case 'Lending Protocol':
                       router.push('/lend')
                       break
-                    case 'SomniaStaking':
+                    case 'Staking Protocol':
                       router.push('/stake')
                       break
-                    case 'SomniaGovernance':
+                    case 'Governance Protocol':
                       router.push('/governance')
                       break
                     default:
@@ -485,7 +528,7 @@ export default function LandingPage() {
                   <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
                   <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-12 -translate-x-12"></div>
-                </div>
+              </div>
                 
                 <div className="relative z-10">
                   <motion.div 
@@ -493,31 +536,9 @@ export default function LandingPage() {
                     whileHover={{ rotate: 5 }}
                   >
                     {protocol.icon}
-                  </motion.div>
+            </motion.div>
                   <h3 className="text-2xl font-semibold mb-3">{protocol.name}</h3>
                   <p className="text-lg opacity-90 mb-6">{protocol.description}</p>
-                  <div className="space-y-3 mb-6">
-                    {protocol.features.map((feature, featureIndex) => (
-                      <motion.div 
-                        key={featureIndex} 
-                        className="flex items-center space-x-3 text-sm"
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ delay: featureIndex * 0.1 }}
-                      >
-                        <CheckCircle className="w-5 h-5 text-green-300 flex-shrink-0" />
-                        <span>{feature}</span>
-                      </motion.div>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className={`px-4 py-2 rounded-full text-sm font-medium ${
-                      protocol.status === 'active' ? 'bg-green-500/20 text-green-200' : 'bg-yellow-500/20 text-yellow-200'
-                    }`}>
-                      {protocol.status}
-                    </span>
-                    <span className="text-sm opacity-75">{protocol.type}</span>
-                  </div>
                   
                   {/* Hover Action */}
                   <motion.div 
@@ -527,10 +548,10 @@ export default function LandingPage() {
                   >
                     <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                       <ArrowRight className="w-4 h-4 text-white" />
-                    </div>
-                  </motion.div>
-                </div>
-              </motion.div>
+              </div>
+            </motion.div>
+              </div>
+            </motion.div>
             ))}
           </motion.div>
         </div>

@@ -2,310 +2,411 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Coins, Clock, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react'
+import { CheckCircle, Clock, AlertCircle, ExternalLink } from 'lucide-react'
 import { useFaucet } from '../lib/hooks/useFaucet'
+import { TestTokenFaucetContract } from '../../abi'
 import { toast } from 'react-hot-toast'
 
+// Success Modal Component
+function SuccessModal({ isOpen, onClose, claimedTokens }: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  claimedTokens: { symbol: string; amount: string }[] 
+}) {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="bg-slate-800 rounded-2xl p-8 max-w-md w-full mx-4 border border-slate-700"
+      >
+        <div className="text-center">
+          <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-8 h-8 text-green-400" />
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">Tokens Claimed Successfully! 🎉</h3>
+          <p className="text-slate-300 mb-6">
+            You've successfully claimed your test tokens. You can now use them to test our DeFi protocols.
+          </p>
+          
+          <div className="space-y-3 mb-6">
+            {claimedTokens.map((token, index) => (
+              <div key={index} className="flex items-center justify-between bg-slate-700/50 rounded-lg p-3">
+                <span className="text-white font-medium">{token.symbol}</span>
+                <span className="text-green-400 font-bold">{token.amount}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4 mb-6">
+            <div className="flex items-center space-x-2 text-blue-400">
+              <Clock className="w-4 h-4" />
+              <span className="text-sm font-medium">Next claim available in 24 hours</span>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+          >
+            Continue
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 export default function TokenFaucet() {
-  const {
-    isLoading,
+  const { 
+    isConnected, 
+    address, 
+    canClaim, 
+    isLoading, 
     isClaimSuccess,
-    error,
-    canClaim,
-    claimStatus,
-    faucetAmounts,
-    handleClaimAll,
-    handleClaimSpecific,
-    refetchCanClaim,
-    refetchClaimStatus,
-    formatTimeUntilNextClaim,
-    clearError
+    claimTokens,
+    claimSpecificToken,
+    lastClaimTime,
+    timeUntilNextClaim
   } = useFaucet()
 
-  const [timeRemaining, setTimeRemaining] = useState<number>(0)
-  const [isContractDeployed, setIsContractDeployed] = useState<boolean>(true) // Assume deployed for now
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [claimedTokens, setClaimedTokens] = useState<{ symbol: string; amount: string }[]>([])
 
-  // Check if faucet contract is deployed
+  // Show success modal when claim is successful
   useEffect(() => {
-    const checkContract = async () => {
-      try {
-        // Try to call a simple function to check if contract exists
-        // This will fail if the contract isn't deployed
-        await refetchCanClaim()
-        setIsContractDeployed(true)
-      } catch (err) {
-        setIsContractDeployed(false)
-      }
-    }
-    
-    checkContract()
-  }, [refetchCanClaim])
-
-  // Update time remaining every second
-  useEffect(() => {
-    if (claimStatus && Array.isArray(claimStatus) && claimStatus[1] > 0) {
-      const interval = setInterval(() => {
-        const now = Math.floor(Date.now() / 1000)
-        const remaining = Math.max(0, claimStatus[1] - now)
-        setTimeRemaining(remaining)
-        
-        if (remaining === 0) {
-          refetchCanClaim()
-          refetchClaimStatus()
-        }
-      }, 1000)
-
-      return () => clearInterval(interval)
-    }
-  }, [claimStatus, refetchCanClaim, refetchClaimStatus])
-
-  // Handle successful claims
-  useEffect(() => {
-    if (isClaimSuccess) {
+    if (isClaimSuccess && !showSuccessModal) {
+      setClaimedTokens([
+        { symbol: 'WSOM', amount: '1000' },
+        { symbol: 'USDC', amount: '1000' },
+        { symbol: 'SOMG', amount: '100' }
+      ])
+      setShowSuccessModal(true)
       toast.success('Tokens claimed successfully! 🎉')
-      refetchCanClaim()
-      refetchClaimStatus()
     }
-  }, [isClaimSuccess, refetchCanClaim, refetchClaimStatus])
+  }, [isClaimSuccess, showSuccessModal])
 
-  // Handle errors
-  useEffect(() => {
-    if (error) {
-      toast.error(error)
-      clearError()
+  // Debug logging
+  console.log('🔍 TokenFaucet Component Debug:', {
+    isConnected,
+    address,
+    canClaim,
+    isLoading,
+    isClaimSuccess,
+    faucetAddress: TestTokenFaucetContract.address,
+    lastClaimTime,
+    timeUntilNextClaim
+  })
+
+  const handleClaimAll = async () => {
+    if (!isConnected) {
+      toast.error('Please connect your wallet first')
+      return
     }
-  }, [error, clearError])
+
+    try {
+      await claimTokens()
+    } catch (error) {
+      console.error('Claim failed:', error)
+      toast.error('Failed to claim tokens')
+    }
+  }
+
+  const handleClaimSpecific = async (token: 'WSOM' | 'USDC' | 'SOMG') => {
+    if (!isConnected) {
+      toast.error('Please connect your wallet first')
+      return
+    }
+
+    try {
+      await claimSpecificToken(token)
+    } catch (error) {
+      console.error(`Claim ${token} failed:`, error)
+      toast.error(`Failed to claim ${token}`)
+    }
+  }
+
+  const formatTimeRemaining = (seconds: number) => {
+    if (seconds <= 0) return 'Ready to claim'
+    
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m remaining`
+    }
+    return `${minutes}m remaining`
+  }
+
+  const isContractDeployed = true // Assuming contract is deployed
 
   const tokenCards = [
     {
-      symbol: 'SOM',
-      name: 'Somnia Token',
-      amount: faucetAmounts.SOM,
-      color: 'from-blue-500 to-indigo-600',
-      icon: '🌙'
-    },
-    {
       symbol: 'USDC',
       name: 'USD Coin',
-      amount: faucetAmounts.USDC,
+      amount: '1000',
       color: 'from-green-500 to-emerald-600',
-      icon: '💵'
+      icon: '💵',
+      deployed: true
     },
     {
       symbol: 'SOMG',
       name: 'Governance Token',
-      amount: faucetAmounts.SOMG,
+      amount: '100',
       color: 'from-purple-500 to-violet-600',
-      icon: '🗳️'
+      icon: '🗳️',
+      deployed: true
+    },
+    {
+      symbol: 'WSOM',
+      name: 'Wrapped Somnia',
+      amount: '1000',
+      color: 'from-blue-500 to-indigo-600',
+      icon: '🌙',
+      deployed: true
     }
   ]
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      {/* Header */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-center mb-8"
-      >
-        <div className="flex items-center justify-center space-x-3 mb-4">
-          <div className="p-3 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full">
-            <Coins className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-            Test Token Faucet
-          </h1>
-        </div>
-        <p className="text-slate-300 text-lg max-w-2xl mx-auto">
-          Get test tokens to explore our DeFi ecosystem! Claim tokens every 24 hours to test swapping, 
-          lending, staking, and governance features.
-        </p>
-      </motion.div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Success Modal */}
+      <SuccessModal 
+        isOpen={showSuccessModal} 
+        onClose={() => setShowSuccessModal(false)}
+        claimedTokens={claimedTokens}
+      />
 
-      {/* Status Card */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-        className="card card-hover p-6 mb-8"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            {!isContractDeployed ? (
-              <AlertCircle className="w-6 h-6 text-red-400" />
-            ) : canClaim ? (
-              <CheckCircle className="w-6 h-6 text-emerald-400" />
-            ) : (
+      <div className="max-w-6xl mx-auto px-6 py-12">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
+          <h1 className="text-4xl font-bold text-white mb-4">Test Token Faucet</h1>
+          <p className="text-slate-300 text-lg max-w-2xl mx-auto">
+            Get test tokens to explore our DeFi ecosystem. Claim tokens every 24 hours to test trading, lending, staking, and governance features.
+          </p>
+        </motion.div>
+
+        {/* Status Cards */}
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-6 border border-slate-700"
+          >
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-blue-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Contract Status</h3>
+            </div>
+            <p className="text-2xl font-bold text-green-400">
+              {isContractDeployed ? '✅ Deployed' : '❌ Not Deployed'}
+            </p>
+            <p className="text-sm text-slate-400 mt-2">
+              {isContractDeployed ? 'Smart contract is ready' : 'Contract not found on network'}
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-6 border border-slate-700"
+          >
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-purple-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Can Claim</h3>
+            </div>
+            <p className="text-2xl font-bold text-green-400">
+              {canClaim ? '✅ Yes' : '❌ No'}
+            </p>
+            <p className="text-sm text-slate-400 mt-2">
+              {canClaim ? 'Ready to claim tokens' : 'Wait for next claim window'}
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-6 border border-slate-700"
+          >
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Wallet Connected</h3>
+            </div>
+            <p className="text-2xl font-bold text-green-400">
+              {isConnected ? '✅ Yes' : '❌ No'}
+            </p>
+            <p className="text-sm text-slate-400 mt-2">
+              {isConnected ? `Connected: ${address?.slice(0, 6)}...${address?.slice(-4)}` : 'Connect wallet to claim'}
+            </p>
+          </motion.div>
+        </div>
+
+        {/* Cooldown Timer */}
+        {lastClaimTime && timeUntilNextClaim > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="bg-amber-500/20 border border-amber-500/30 rounded-xl p-6 mb-8 text-center"
+          >
+            <div className="flex items-center justify-center space-x-3 mb-3">
               <Clock className="w-6 h-6 text-amber-400" />
+              <h3 className="text-xl font-semibold text-amber-400">Claim Cooldown Active</h3>
+            </div>
+            <p className="text-amber-300 text-lg font-medium">
+              {formatTimeRemaining(timeUntilNextClaim)}
+            </p>
+            <p className="text-amber-200/80 text-sm mt-2">
+              You can claim again once the cooldown period ends
+            </p>
+          </motion.div>
+        )}
+
+        {/* Claim All Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="text-center mb-12"
+        >
+          <button
+            onClick={handleClaimAll}
+            disabled={!isConnected || !canClaim || isLoading}
+            className={`px-8 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 ${
+              !isConnected || !canClaim || isLoading
+                ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700'
+            }`}
+          >
+            {isLoading ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>Claiming...</span>
+              </div>
+            ) : (
+              '🎯 Claim All Tokens'
             )}
-            <div>
-              <h3 className="text-lg font-semibold text-white">
-                {!isContractDeployed 
-                  ? 'Faucet Not Deployed' 
-                  : canClaim 
-                    ? 'Ready to Claim!' 
-                    : 'Cooldown Active'
-                }
-              </h3>
-              <p className="text-slate-400">
-                {!isContractDeployed 
-                  ? 'Deploy the faucet contract first' 
-                  : canClaim 
-                    ? 'You can claim tokens now' 
-                    : formatTimeUntilNextClaim(timeRemaining)
-                }
+          </button>
+          <p className="text-slate-400 text-sm mt-3">
+            Claim all three token types at once (WSOM, USDC, SOMG)
+          </p>
+        </motion.div>
+
+        {/* Individual Token Cards */}
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          {tokenCards.map((token, index) => (
+            <motion.div
+              key={token.symbol}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
+              className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-6 border border-slate-700 hover:border-slate-600 transition-all"
+            >
+              <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r ${token.color} flex items-center justify-center text-2xl font-bold text-white`}>
+                {token.icon}
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2 text-center">{token.name}</h3>
+              <p className="text-3xl font-bold text-center mb-4 bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                {token.amount}
+              </p>
+              
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-400">Status:</span>
+                  <span className={`font-medium ${token.deployed ? 'text-green-400' : 'text-red-400'}`}>
+                    {token.deployed ? '✅ Deployed' : '❌ Not Deployed'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-400">Network:</span>
+                  <span className="text-blue-400 font-medium">Somnia Testnet</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handleClaimSpecific(token.symbol as 'WSOM' | 'USDC' | 'SOMG')}
+                disabled={!isConnected || !canClaim || isLoading || !token.deployed}
+                className={`w-full py-3 px-4 rounded-lg font-semibold transition-all ${
+                  !isConnected || !canClaim || isLoading || !token.deployed
+                    ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700'
+                }`}
+              >
+                {isLoading ? 'Claiming...' : `Claim ${token.symbol}`}
+              </button>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Info Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+          className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-8 border border-slate-700"
+        >
+          <h3 className="text-2xl font-bold text-white mb-6 text-center">How It Works</h3>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">1️⃣</span>
+              </div>
+              <h4 className="text-lg font-semibold text-white mb-2">Connect Wallet</h4>
+              <p className="text-slate-300 text-sm">
+                Connect your wallet to the Somnia testnet to access the faucet
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">2️⃣</span>
+              </div>
+              <h4 className="text-lg font-semibold text-white mb-2">Claim Tokens</h4>
+              <p className="text-slate-300 text-sm">
+                Claim test tokens for WSOM, USDC, and SOMG to test our DeFi protocols
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">3️⃣</span>
+              </div>
+              <h4 className="text-lg font-semibold text-white mb-2">Start Testing</h4>
+              <p className="text-slate-300 text-sm">
+                Use your tokens to test trading, lending, staking, and governance features
               </p>
             </div>
           </div>
-          
-          <button
-            onClick={() => {
-              refetchCanClaim()
-              refetchClaimStatus()
-            }}
-            disabled={!isContractDeployed}
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Refresh status"
-          >
-            <RefreshCw className="w-5 h-5" />
-          </button>
-        </div>
-      </motion.div>
+        </motion.div>
 
-      {/* Token Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {tokenCards.map((token, index) => (
-          <motion.div
-            key={token.symbol}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 + index * 0.1 }}
-            className="card card-hover p-6 text-center"
-          >
-            <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r ${token.color} flex items-center justify-center text-3xl`}>
-              {token.icon}
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">{token.name}</h3>
-            <p className="text-2xl font-bold text-slate-300 mb-4">{token.amount} {token.symbol}</p>
-            
-            <button
-              onClick={() => handleClaimSpecific(token.symbol as 'SOM' | 'USDC' | 'SOMG')}
-              disabled={!isContractDeployed || !canClaim || isLoading}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-                isContractDeployed && canClaim && !isLoading
-                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white transform hover:scale-105'
-                  : 'bg-slate-600 text-slate-400 cursor-not-allowed'
-              }`}
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Claiming...</span>
-                </div>
-              ) : !isContractDeployed ? (
-                'Contract Not Deployed'
-              ) : (
-                `Claim ${token.symbol}`
-              )}
-            </button>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Claim All Button */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.5 }}
-        className="text-center mb-8"
-      >
-        <button
-          onClick={handleClaimAll}
-          disabled={!isContractDeployed || !canClaim || isLoading}
-          className={`px-8 py-4 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-105 ${
-            isContractDeployed && canClaim && !isLoading
-              ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl'
-              : 'bg-slate-600 text-slate-400 cursor-not-allowed'
-          }`}
+        {/* Contract Info */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 1.0 }}
+          className="mt-12 text-center"
         >
-          {isLoading ? (
-            <div className="flex items-center justify-center space-x-3">
-              <RefreshCw className="w-5 h-5 animate-spin" />
-              <span>Claiming All Tokens...</span>
-            </div>
-          ) : !isContractDeployed ? (
-            <div className="flex items-center justify-center space-x-3">
-              <AlertCircle className="w-6 h-6" />
-              <span>Deploy Faucet First</span>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center space-x-3">
-              <Coins className="w-6 h-6" />
-              <span>Claim All Tokens</span>
-            </div>
-          )}
-        </button>
-      </motion.div>
-
-      {/* Info Section */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.6 }}
-        className="card card-hover p-6"
-      >
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-          <AlertCircle className="w-5 h-5 text-blue-400" />
-          <span>How it works</span>
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-300">
-          <div className="space-y-3">
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5">
-                1
-              </div>
-              <div>
-                <p className="font-medium text-white">Connect Wallet</p>
-                <p>Make sure your wallet is connected to Somnia testnet</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5">
-                2
-              </div>
-              <div>
-                <p className="font-medium text-white">Claim Tokens</p>
-                <p>Click claim to receive test tokens for free</p>
-              </div>
-            </div>
+          <div className="inline-flex items-center space-x-2 bg-slate-800/60 rounded-lg px-4 py-2 border border-slate-700">
+            <ExternalLink className="w-4 h-4 text-slate-400" />
+            <span className="text-slate-400 text-sm">
+              Faucet Contract: {TestTokenFaucetContract.address.slice(0, 6)}...{TestTokenFaucetContract.address.slice(-4)}
+            </span>
           </div>
-          
-          <div className="space-y-3">
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5">
-                3
-              </div>
-              <div>
-                <p className="font-medium text-white">24h Cooldown</p>
-                <p>Wait 24 hours before claiming again</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5">
-                4
-              </div>
-              <div>
-                <p className="font-medium text-white">Start Trading</p>
-                <p>Use tokens to test our DeFi protocols</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   )
 } 

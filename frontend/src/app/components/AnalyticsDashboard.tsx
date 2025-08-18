@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { 
   TrendingUp, 
   Users, 
-  BarChart3, 
+  BarChart3,
   RefreshCw,
   ArrowRight,
   DollarSign,
@@ -14,8 +14,8 @@ import {
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { DEFI_PROTOCOLS, LENDING_MARKETS, STAKING_TIERS } from '../lib/constants'
 
-// Mock data for charts
-const volumeData = [
+  // Mock data for charts
+  const volumeData = [
   { time: '00:00', volume: 125000 },
   { time: '04:00', volume: 189000 },
   { time: '08:00', volume: 156000 },
@@ -101,15 +101,15 @@ export default function AnalyticsDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
-      {/* Header */}
+        {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <div>
+            <div>
           <h1 className="text-3xl font-bold text-white mb-2">DeFi Analytics Dashboard</h1>
           <p className="text-lg text-slate-300 mb-8">
               Track your DeFi portfolio performance, monitor protocol usage, and analyze market trends across Somnia&apos;s ecosystem.
             </p>
-        </div>
-        
+            </div>
+            
         <div className="flex items-center space-x-4">
           <select
             value={timeframe}
@@ -122,21 +122,21 @@ export default function AnalyticsDashboard() {
             <option value="30d">30 Days</option>
           </select>
           
-          <button
+                  <button
             onClick={refreshData}
             disabled={isLoading}
             className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
-          </button>
-        </div>
-      </div>
+                  </button>
+            </div>
+          </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat, index) => (
-          <motion.div
+        <motion.div 
             key={stat.title}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -146,7 +146,7 @@ export default function AnalyticsDashboard() {
             <div className="flex items-center justify-between mb-4">
               <div className={`p-2 bg-gray-700 rounded-lg ${stat.color}`}>
                 <stat.icon className="w-6 h-6" />
-              </div>
+            </div>
               <div className={`flex items-center space-x-1 text-sm ${
                 stat.changeType === 'positive' ? 'text-green-400' : 'text-red-400'
               }`}>
@@ -156,25 +156,25 @@ export default function AnalyticsDashboard() {
                   <ArrowRight className="w-4 h-4" />
                 )}
                 <span>{stat.change}</span>
-              </div>
+            </div>
             </div>
             
             <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
             <div className="text-sm text-gray-400">{stat.title}</div>
           </motion.div>
         ))}
-      </div>
+            </div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Trading Volume Chart */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
           className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
+          >
+            <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-semibold text-white">Trading Volume (24h)</h3>
             <div className="flex items-center space-x-2 text-green-400">
               <TrendingUp className="w-4 h-4" />
@@ -182,37 +182,37 @@ export default function AnalyticsDashboard() {
             </div>
           </div>
           
-          <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={300}>
             <LineChart data={volumeData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <XAxis dataKey="time" stroke="#9CA3AF" />
               <YAxis stroke="#9CA3AF" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1F2937', 
-                  border: '1px solid #374151',
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: '#1F2937',
+                    border: '1px solid #374151',
                   borderRadius: '8px'
-                }}
-              />
+                  }}
+                />
               <Line 
-                type="monotone" 
-                dataKey="volume" 
-                stroke="#3B82F6" 
+                  type="monotone" 
+                  dataKey="volume" 
+                  stroke="#3B82F6" 
                 strokeWidth={3}
                 dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
               />
             </LineChart>
-          </ResponsiveContainer>
-        </motion.div>
+            </ResponsiveContainer>
+          </motion.div>
 
         {/* TVL by Protocol */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
           className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
+          >
+            <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-semibold text-white">TVL by Protocol</h3>
             <div className="flex items-center space-x-2 text-blue-400">
               <BarChart3 className="w-4 h-4" />
@@ -220,23 +220,23 @@ export default function AnalyticsDashboard() {
             </div>
           </div>
           
-          <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={300}>
             <BarChart data={tvlData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <XAxis dataKey="protocol" stroke="#9CA3AF" />
               <YAxis stroke="#9CA3AF" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1F2937', 
-                  border: '1px solid #374151',
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: '#1F2937',
+                    border: '1px solid #374151',
                   borderRadius: '8px'
                 }}
               />
               <Bar dataKey="tvl" fill="#3B82F6" radius={[4, 4, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
-      </div>
+            </ResponsiveContainer>
+          </motion.div>
+        </div>
 
       {/* Protocol Performance */}
       <motion.div
@@ -267,10 +267,10 @@ export default function AnalyticsDashboard() {
       {/* User Activity & Protocol Usage */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* User Activity */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
           className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6"
         >
           <h3 className="text-xl font-semibold text-white mb-6">User Activity (24h)</h3>
@@ -280,10 +280,10 @@ export default function AnalyticsDashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <XAxis dataKey="hour" stroke="#9CA3AF" />
               <YAxis stroke="#9CA3AF" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1F2937', 
-                  border: '1px solid #374151',
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: '#1F2937',
+                      border: '1px solid #374151',
                   borderRadius: '8px'
                 }}
               />
@@ -328,8 +328,8 @@ export default function AnalyticsDashboard() {
                 dataKey="value"
               >
                 {protocolUsageData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
               </Pie>
               <Tooltip 
                 contentStyle={{ 
@@ -339,27 +339,27 @@ export default function AnalyticsDashboard() {
                 }}
               />
             </PieChart>
-          </ResponsiveContainer>
-          
+              </ResponsiveContainer>
+              
           <div className="grid grid-cols-2 gap-4 mt-6">
             {protocolUsageData.map((item) => (
               <div key={item.name} className="flex items-center space-x-3">
-                <div 
-                  className="w-4 h-4 rounded-full"
+                      <div 
+                        className="w-4 h-4 rounded-full"
                   style={{ backgroundColor: item.color }}
                 />
                 <span className="text-sm text-gray-300">{item.name}</span>
                 <span className="text-sm font-medium text-white">{item.value}%</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
 
       {/* Lending & Staking Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Lending Markets */}
-        <motion.div
+        <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}
@@ -390,7 +390,7 @@ export default function AnalyticsDashboard() {
         </motion.div>
 
         {/* Staking Tiers */}
-        <motion.div
+        <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.7 }}
@@ -401,21 +401,21 @@ export default function AnalyticsDashboard() {
           <div className="space-y-4">
             {STAKING_TIERS.map((tier) => (
               <div key={tier.name} className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg">
-                <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
                     <span className="text-lg">💰</span>
-                  </div>
-                  <div>
+                      </div>
+                      <div>
                     <div className="font-medium text-white">{tier.name}</div>
                     <div className="text-sm text-gray-400">{tier.multiplier} Multiplier</div>
-                  </div>
-                </div>
+                        </div>
+                      </div>
                 
-                <div className="text-right">
+                    <div className="text-right">
                   <div className="text-sm text-purple-400">{tier.lockDuration}</div>
                   <div className="text-sm text-gray-400">Penalty: {tier.penalty}</div>
-                </div>
-              </div>
+                      </div>
+                    </div>
             ))}
           </div>
         </motion.div>
