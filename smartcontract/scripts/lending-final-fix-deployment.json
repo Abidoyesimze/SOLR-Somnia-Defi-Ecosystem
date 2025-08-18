@@ -1,0 +1,13 @@
+{
+  "contract": "SomniaLending",
+  "address": "0x5082b379965746DC3Cd93402Ff82e7525796576a",
+  "deployer": "0x95e1CF9174AbD55E47b9EDa1b3f0F2ba0f4369a0",
+  "network": "somniaTestnet",
+  "timestamp": "2025-08-18T17:23:27.351Z",
+  "fixes": [
+    "Division by zero in exchange rate calculations",
+    "_accrueInterest function safety",
+    "Market creation initialization",
+    "Struct access safety (checking token != address(0))"
+  ]
+}

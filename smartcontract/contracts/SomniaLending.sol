@@ -100,7 +100,7 @@ contract SomniaLending is Ownable, ReentrancyGuard {
 
     // Modifiers
     modifier marketExists(address token) {
-        require(markets[token].isActive, "SomniaLending: MARKET_NOT_EXISTS");
+        require(markets[token].token != address(0), "SomniaLending: MARKET_NOT_EXISTS");
         _;
     }
 
@@ -131,7 +131,9 @@ contract SomniaLending is Ownable, ReentrancyGuard {
         address token,
         uint256 collateralFactor
     ) external onlyOwner validToken(token) {
-        require(!markets[token].isActive, "SomniaLending: MARKET_EXISTS");
+        // Check if market exists by checking if the token address is not zero
+        // This avoids accessing uninitialized struct fields
+        require(markets[token].token == address(0), "SomniaLending: MARKET_EXISTS");
         require(
             collateralFactor <= 9000,
             "SomniaLending: INVALID_COLLATERAL_FACTOR"
@@ -143,7 +145,7 @@ contract SomniaLending is Ownable, ReentrancyGuard {
             totalBorrow: 0,
             supplyRate: INTEREST_RATE_MODEL,
             borrowRate: INTEREST_RATE_MODEL + 200, // 2% spread
-            exchangeRate: 1e18,
+            exchangeRate: 1e18, // Start with 1:1 exchange rate
             lastUpdateTime: block.timestamp,
             isActive: true,
             collateralFactor: collateralFactor
@@ -178,9 +180,14 @@ contract SomniaLending is Ownable, ReentrancyGuard {
 
         // Update market state
         market.totalSupply += amount;
-        market.exchangeRate =
-            (market.totalSupply * 1e18) /
-            (market.totalSupply - market.totalBorrow);
+
+        // Update exchange rate safely (avoid division by zero)
+        if (market.totalSupply > market.totalBorrow) {
+            market.exchangeRate =
+                (market.totalSupply * 1e18) /
+                (market.totalSupply - market.totalBorrow);
+        }
+        // If totalSupply <= totalBorrow, keep the current exchange rate
 
         // Update user position
         position.supplied += shares;
@@ -224,9 +231,14 @@ contract SomniaLending is Ownable, ReentrancyGuard {
 
         // Update market state
         market.totalSupply -= amount;
-        market.exchangeRate =
-            (market.totalSupply * 1e18) /
-            (market.totalSupply - market.totalBorrow);
+
+        // Update exchange rate safely (avoid division by zero)
+        if (market.totalSupply > market.totalBorrow) {
+            market.exchangeRate =
+                (market.totalSupply * 1e18) /
+                (market.totalSupply - market.totalBorrow);
+        }
+        // If totalSupply <= totalBorrow, keep the current exchange rate
 
         // Update user position
         position.supplied -= shares;
@@ -411,6 +423,12 @@ contract SomniaLending is Ownable, ReentrancyGuard {
      */
     function _accrueInterest(address token) internal {
         Market storage market = markets[token];
+
+        // Skip interest accrual for newly created markets or if lastUpdateTime is 0
+        if (market.lastUpdateTime == 0) {
+            return;
+        }
+
         uint256 timeElapsed = block.timestamp - market.lastUpdateTime;
 
         if (timeElapsed > 0) {

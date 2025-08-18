@@ -1,0 +1,33 @@
+{
+  "network": "Somnia Testnet",
+  "deployer": "0x95e1CF9174AbD55E47b9EDa1b3f0F2ba0f4369a0",
+  "lendingContract": "0x5082b379965746DC3Cd93402Ff82e7525796576a",
+  "markets": [
+    {
+      "name": "WSOM",
+      "token": "0x37FcBDc9Ff829279Ad49dFFdDeDAa7B224B1b0B2",
+      "collateralFactor": 8000,
+      "collateralFactorPercent": 80
+    },
+    {
+      "name": "SOMG",
+      "token": "0xc8F6fF01fd1D981e627a8102fc334D360Af7384b",
+      "collateralFactor": 7500,
+      "collateralFactorPercent": 75
+    },
+    {
+      "name": "USDC",
+      "token": "0xA20E9Db778125527a53069f502292B2b02e3D7CF",
+      "collateralFactor": 7500,
+      "collateralFactorPercent": 75
+    },
+    {
+      "name": "SOMLP",
+      "token": "0xE018246306b3e3AE88b618aD2c2E0Bc10A86AD65",
+      "collateralFactor": 7500,
+      "collateralFactorPercent": 75
+    }
+  ],
+  "setupTime": "2025-08-18T17:30:28.787Z",
+  "totalMarkets": "4"
+}
