@@ -39,7 +39,7 @@ Welcome to the complete DeFi ecosystem for Somnia Network. This guide will help 
 ## Network Configuration
 - **Network**: Somnia Testnet
 - **Chain ID**: 50312
-- **RPC URL**: https://testnet-rpc.somnia.network
+- **RPC URL**: https://dream-rpc.somnia.network/
 - **Explorer**: https://testnet-explorer.somnia.network
     `
   },
@@ -77,10 +77,10 @@ Our DeFi ecosystem consists of four core protocols, each designed to work togeth
 ## Contract Addresses
 \`\`\`javascript
 const contractAddresses = {
-  'SomniaAMM': '${CONTRACTS.SOMNIA_AMM}',
-  'SomniaLending': '${CONTRACTS.SOMNIA_LENDING}',
-  'SomniaStaking': '${CONTRACTS.SOMNIA_STAKING}',
-  'SomniaGovernance': '${CONTRACTS.SOMNIA_GOVERNANCE}'
+  'SomniaAMM': '${CONTRACTS.AMM}',
+  'SomniaLending': '${CONTRACTS.LENDING}',
+  'SomniaStaking': '${CONTRACTS.STAKING}',
+  'SomniaGovernance': '${CONTRACTS.GOVERNANCE}'
 }
 \`\`\`
     `
@@ -492,8 +492,18 @@ setInterval(async () => {
     sendAlert('Health check error', { error: error.message });
   }
 }, 5 * 60 * 1000); // Every 5 minutes
-\`\`\`
-    `
+\`\`
+
+## Quick Links
+
+${Object.values(DEFI_PROTOCOLS).map((protocol) => `
+- **${protocol.name}**: ${protocol.description}
+`).join('')}
+
+## Support
+
+For technical support, please refer to the official Somnia documentation or contact the development team.
+`
   }
 ]
 
@@ -625,7 +635,7 @@ export default function DeveloperDocs() {
       >
         <h3 className="text-2xl font-bold text-white mb-6">Quick Links</h3>
         <div className="flex flex-wrap justify-center gap-4">
-          {DEFI_PROTOCOLS.map((protocol) => (
+          {Object.values(DEFI_PROTOCOLS).map((protocol) => (
             <a
               key={protocol.name}
               href={`/protocols/${protocol.name.toLowerCase()}`}
@@ -640,4 +650,4 @@ export default function DeveloperDocs() {
       </motion.div>
     </div>
   )
-} 
+}

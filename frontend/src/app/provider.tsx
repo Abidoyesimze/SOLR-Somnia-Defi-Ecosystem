@@ -16,8 +16,8 @@ const somniaChain = {
     symbol: 'SOM',
   },
   rpcUrls: {
-    public: { http: ['https://testnet-rpc.somnia.network'] },
-    default: { http: ['https://testnet-rpc.somnia.network'] },
+    public: { http: ['https://dream-rpc.somnia.network/'] },
+    default: { http: ['https://dream-rpc.somnia.network/'] },
   },
   blockExplorers: {
     default: { name: 'Somnia Explorer', url: 'https://testnet-explorer.somnia.network' },

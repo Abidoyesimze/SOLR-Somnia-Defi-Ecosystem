@@ -12,16 +12,23 @@ import {
   Wallet, 
   BarChart3, 
   Users, 
-  BookOpen 
+  BookOpen,
+  Lock,
+  Vote,
+  Coins,
+  FileText,
+  AlertCircle
 } from 'lucide-react'
 
 const navigation = [
-  { name: 'Trade', href: '/trade', icon: RefreshCw },
-  { name: 'Lend', href: '/lend', icon: TrendingUp },
-  { name: 'Stake', href: '/stake', icon: Wallet },
-  { name: 'Governance', href: '/governance', icon: Users },
+  { name: 'Trade', href: '/trade', icon: TrendingUp },
+  { name: 'Lend', href: '/lend', icon: Wallet },
+  { name: 'Stake', href: '/stake', icon: Lock },
+  { name: 'Governance', href: '/governance', icon: Vote },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Documentation', href: '/docs', icon: BookOpen }
+  { name: 'Faucet', href: '/faucet', icon: Coins },
+  { name: 'Test', href: '/test', icon: AlertCircle },
+  { name: 'Docs', href: '/docs', icon: FileText },
 ]
 
 export default function Header() {

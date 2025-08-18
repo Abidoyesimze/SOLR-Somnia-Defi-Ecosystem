@@ -44,6 +44,8 @@ contract SomniaAMM is Ownable, ReentrancyGuard {
     // ===== Storage =====
     mapping(address => mapping(address => Pool)) public pools;  // sorted key [tokenA][tokenB]
     mapping(address => address[]) public poolTokens;            // adjacency: tokenA => [tokenB...]
+    
+    // Optional: Keep whitelist for UI/frontend purposes only - NO CONTRACT ENFORCEMENT
     mapping(address => bool) public whitelistedTokens;
 
     uint256 public poolCount;
@@ -64,16 +66,16 @@ contract SomniaAMM is Ownable, ReentrancyGuard {
     constructor(address initialOwner) Ownable(initialOwner) {}
 
     // ===== Modifiers / Helpers =====
+    // PERMISSIONLESS: Only check basic requirements, no whitelisting
     modifier validTokens(address _token0, address _token1) {
-        require(_token0 != _token1, "AMM: IDENTICAL_ADDRESSES");
-        require(_token0 != address(0) && _token1 != address(0), "AMM: ZERO_ADDRESS");
-        require(whitelistedTokens[_token0] && whitelistedTokens[_token1], "AMM: TOKEN_NOT_WHITELISTED");
+        require(_token0 != _token1, "SomniaAMM: IDENTICAL_ADDRESSES");
+        require(_token0 != address(0) && _token1 != address(0), "SomniaAMM: ZERO_ADDRESS");
         _;
     }
 
     modifier poolExists(address _token0, address _token1) {
         (address a, address b) = _sort(_token0, _token1);
-        require(pools[a][b].exists, "AMM: POOL_NOT_EXISTS");
+        require(pools[a][b].exists, "SomniaAMM: POOL_NOT_EXISTS");
         _;
     }
 
@@ -91,9 +93,10 @@ contract SomniaAMM is Ownable, ReentrancyGuard {
         lpToken = SomniaLPToken(pools[a][b].lpToken);
     }
 
-    // ===== Admin: token whitelist =====
+    // ===== Admin: Optional whitelist for UI/recommendations ONLY =====
+    // NOTE: These have ZERO effect on contract functionality - purely for frontend
     function whitelistToken(address token) external onlyOwner {
-        require(token != address(0), "AMM: ZERO_ADDRESS");
+        require(token != address(0), "SomniaAMM: ZERO_ADDRESS");
         whitelistedTokens[token] = true;
     }
 
@@ -101,7 +104,7 @@ contract SomniaAMM is Ownable, ReentrancyGuard {
         whitelistedTokens[token] = false;
     }
 
-    // ===== Pool lifecycle =====
+    // ===== Pool lifecycle (FULLY PERMISSIONLESS!) =====
     function createPool(address token0, address token1)
         external
         validTokens(token0, token1)
@@ -109,7 +112,7 @@ contract SomniaAMM is Ownable, ReentrancyGuard {
         returns (address lpTokenAddr)
     {
         (address a, address b) = _sort(token0, token1);
-        require(!pools[a][b].exists, "AMM: POOL_EXISTS");
+        require(!pools[a][b].exists, "SomniaAMM: POOL_EXISTS");
 
         // Deploy a dedicated LP token for this pool, owned by this AMM
         SomniaLPToken lp = new SomniaLPToken(address(this));
@@ -160,7 +163,7 @@ contract SomniaAMM is Ownable, ReentrancyGuard {
 
             // mint = sqrt(amount0 * amount1) - MINIMUM_LIQUIDITY
             liquidity = Math.sqrt(amount0 * amount1) - MINIMUM_LIQUIDITY;
-            require(liquidity > 0, "AMM: INSUFFICIENT_LIQUIDITY_MINTED");
+            require(liquidity > 0, "SomniaAMM: INSUFFICIENT_LIQUIDITY_MINTED");
 
             // Transfer exact amounts in
             IERC20(p.token0).safeTransferFrom(msg.sender, address(this), amount0);
@@ -173,12 +176,12 @@ contract SomniaAMM is Ownable, ReentrancyGuard {
             // choose optimal counterpart to maintain price
             uint256 amount1Optimal = (amount0Desired * p.reserve1) / p.reserve0;
             if (amount1Optimal <= amount1Desired) {
-                require(amount1Optimal >= amount1Min, "AMM: INSUFF_AMOUNT1");
+                require(amount1Optimal >= amount1Min, "SomniaAMM: INSUFF_AMOUNT1");
                 amount0 = amount0Desired;
                 amount1 = amount1Optimal;
             } else {
                 uint256 amount0Optimal = (amount1Desired * p.reserve0) / p.reserve1;
-                require(amount0Optimal >= amount0Min, "AMM: INSUFF_AMOUNT0");
+                require(amount0Optimal >= amount0Min, "SomniaAMM: INSUFF_AMOUNT0");
                 amount0 = amount0Optimal;
                 amount1 = amount1Desired;
             }
@@ -188,7 +191,7 @@ contract SomniaAMM is Ownable, ReentrancyGuard {
                 (amount0 * _totalSupply) / p.reserve0,
                 (amount1 * _totalSupply) / p.reserve1
             );
-            require(liquidity > 0, "AMM: INSUFFICIENT_LIQUIDITY_MINTED");
+            require(liquidity > 0, "SomniaAMM: INSUFFICIENT_LIQUIDITY_MINTED");
 
             // Transfer exact amounts in
             IERC20(p.token0).safeTransferFrom(msg.sender, address(this), amount0);
@@ -221,7 +224,7 @@ contract SomniaAMM is Ownable, ReentrancyGuard {
         Pool storage p = _pool(token0, token1);
         SomniaLPToken lp = _lp(token0, token1);
 
-        require(liquidity > 0, "AMM: ZERO_LIQUIDITY");
+        require(liquidity > 0, "SomniaAMM: ZERO_LIQUIDITY");
 
         uint256 _totalSupply = lp.totalSupply(); // includes locked MINIMUM_LIQUIDITY
 
@@ -229,8 +232,8 @@ contract SomniaAMM is Ownable, ReentrancyGuard {
         amount0 = (liquidity * p.reserve0) / _totalSupply;
         amount1 = (liquidity * p.reserve1) / _totalSupply;
 
-        require(amount0 >= amount0Min, "AMM: INSUFF_AMOUNT0");
-        require(amount1 >= amount1Min, "AMM: INSUFF_AMOUNT1");
+        require(amount0 >= amount0Min, "SomniaAMM: INSUFF_AMOUNT0");
+        require(amount1 >= amount1Min, "SomniaAMM: INSUFF_AMOUNT1");
 
         // burn LP from caller
         lp.burn(msg.sender, liquidity, "POOL");
@@ -260,7 +263,7 @@ contract SomniaAMM is Ownable, ReentrancyGuard {
         returns (uint256 amountOut)
     {
         Pool storage p = _pool(tokenIn, tokenOut);
-        require(amountIn > 0, "AMM: INSUFF_INPUT");
+        require(amountIn > 0, "SomniaAMM: INSUFF_INPUT");
 
         bool inIs0 = (tokenIn == p.token0);
 
@@ -279,7 +282,7 @@ contract SomniaAMM is Ownable, ReentrancyGuard {
         // Constant product with fee on input:
         // amountOut = (amountInAfterFee * reserveOut) / (reserveIn + amountInAfterFee)
         amountOut = (amountInAfterFee * reserveOut) / (reserveIn + amountInAfterFee);
-        require(amountOut >= amountOutMin, "AMM: INSUFF_OUTPUT");
+        require(amountOut >= amountOutMin, "SomniaAMM: INSUFF_OUTPUT");
 
         // Update reserves and fee buckets
         if (inIs0) {
@@ -361,5 +364,15 @@ contract SomniaAMM is Ownable, ReentrancyGuard {
         if (bal > 0) {
             IERC20(feeToken).safeTransfer(owner(), bal);
         }
+    }
+
+    // ===== Utility functions for frontend =====
+    function isTokenWhitelisted(address token) external view returns (bool) {
+        return whitelistedTokens[token];
+    }
+
+    function checkPoolExists(address token0, address token1) external view returns (bool) {
+        (address a, address b) = _sort(token0, token1);
+        return pools[a][b].exists;
     }
 }

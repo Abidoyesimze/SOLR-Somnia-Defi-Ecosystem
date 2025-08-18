@@ -100,7 +100,10 @@ contract SomniaLending is Ownable, ReentrancyGuard {
 
     // Modifiers
     modifier marketExists(address token) {
-        require(markets[token].token != address(0), "SomniaLending: MARKET_NOT_EXISTS");
+        require(
+            markets[token].token != address(0),
+            "SomniaLending: MARKET_NOT_EXISTS"
+        );
         _;
     }
 
@@ -133,7 +136,10 @@ contract SomniaLending is Ownable, ReentrancyGuard {
     ) external onlyOwner validToken(token) {
         // Check if market exists by checking if the token address is not zero
         // This avoids accessing uninitialized struct fields
-        require(markets[token].token == address(0), "SomniaLending: MARKET_EXISTS");
+        require(
+            markets[token].token == address(0),
+            "SomniaLending: MARKET_EXISTS"
+        );
         require(
             collateralFactor <= 9000,
             "SomniaLending: INVALID_COLLATERAL_FACTOR"

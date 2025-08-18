@@ -72,8 +72,8 @@ interface DeFiState {
 
 export const useStore = create<DeFiState>((set, get) => ({
   // Initial state
-  fromToken: 'SOM',
-  toToken: 'SOMG',
+  fromToken: 'WSOM',
+  toToken: 'USDC',
   fromAmount: '',
   toAmount: '',
   slippage: 0.5,
@@ -142,8 +142,8 @@ export const useStore = create<DeFiState>((set, get) => ({
   clearError: () => set({ error: null }),
   
   resetState: () => set({
-    fromToken: 'SOM',
-    toToken: 'SOMG',
+    fromToken: 'WSOM',
+    toToken: 'USDC',
     fromAmount: '',
     toAmount: '',
     slippage: 0.5,
