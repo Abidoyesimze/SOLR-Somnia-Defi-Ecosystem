@@ -1,0 +1,9 @@
+{
+  "network": "Somnia Testnet",
+  "deployer": "0x95e1CF9174AbD55E47b9EDa1b3f0F2ba0f4369a0",
+  "contracts": {
+    "SomniaLendingFixed": "0xB1c2718bA9747b6D716D4fA1e46a9E50cd64A90e"
+  },
+  "deploymentTime": "2025-08-18T17:00:48.453Z",
+  "fix": "Fixed division by zero error in exchange rate calculations"
+}
