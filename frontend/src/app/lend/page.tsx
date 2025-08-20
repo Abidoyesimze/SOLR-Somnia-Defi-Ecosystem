@@ -25,7 +25,7 @@ import {
 
 // Import your constants and contracts
 import { DEFI_TOKENS, CONTRACTS } from '../lib/constants'
-import { SomniaLendingContract } from '../../abi'
+import { SomniaLendingFixedContract } from '../../abi'
 
 // Lending Contract ABI
 const LENDING_ABI = [
@@ -43,6 +43,11 @@ const LENDING_ABI = [
   "function borrow(address token, uint256 amount) external",
   "function repay(address token, uint256 amount) external",
   "function createMarket(address token, uint256 collateralFactor) external",
+  
+  // Admin functions
+  "function whitelistToken(address token) external",
+  "function addInitialLiquidity(address token, uint256 amount) external",
+  "function setMarketParameters(address token, uint256 supplyRate, uint256 borrowRate, uint256 collateralFactor) external",
   
   // Events
   "event Supply(address indexed user, address indexed token, uint256 amount, uint256 exchangeRate)",
@@ -97,6 +102,23 @@ export default function IntegratedLendingInterface() {
   const [selectedToken, setSelectedToken] = useState<string | null>(null)
   const [actionAmount, setActionAmount] = useState('')
   const [showSettings, setShowSettings] = useState(false)
+
+  // Check if user is contract owner
+  const [isOwner, setIsOwner] = useState(false)
+  
+  const checkIfOwner = useCallback(async () => {
+    if (!provider || !userAddress) return
+    
+    try {
+      // For now, assume any connected user can create markets
+      // In production, you'd check against a whitelist or governance contract
+      setIsOwner(true)
+      console.log('User can create markets (owner check disabled)')
+    } catch (error) {
+      console.error('Failed to check owner status:', error)
+      setIsOwner(false)
+    }
+  }, [provider, userAddress])
 
   // Initialize Web3
   useEffect(() => {
@@ -171,12 +193,15 @@ export default function IntegratedLendingInterface() {
     try {
       if (!provider) return
       
-      const lendingContract = new ethers.Contract(SomniaLendingContract.address, LENDING_ABI, provider)
+      console.log('Loading markets from contract:', SomniaLendingFixedContract.address)
+      const lendingContract = new ethers.Contract(SomniaLendingFixedContract.address, LENDING_ABI, provider)
       
       // Get all markets from the contract
       const marketAddresses = await lendingContract.getAllMarkets()
+      console.log('Found market addresses:', marketAddresses)
       
       if (marketAddresses.length === 0) {
+        console.log('No markets found in contract')
         setMarkets([])
         return
       }
@@ -185,46 +210,143 @@ export default function IntegratedLendingInterface() {
       
       for (const marketAddress of marketAddresses) {
         try {
+          console.log('Loading market info for:', marketAddress)
           const marketInfo = await lendingContract.getMarket(marketAddress)
+          console.log('Market info:', marketInfo)
           
           // Get token info
           const tokenContract = new ethers.Contract(marketAddress, ERC20_ABI, provider)
           const symbol = await tokenContract.symbol()
           const decimals = await tokenContract.decimals()
+          const name = await tokenContract.name()
           
-          // Find token in our constants
-          const tokenData = Object.values(DEFI_TOKENS).find(token => 
-            token.address?.toLowerCase() === marketAddress.toLowerCase()
-          )
+          console.log('Token details:', { symbol, decimals, name, address: marketAddress })
           
-          if (tokenData) {
-            const totalSupply = ethers.formatUnits(marketInfo.totalSupply, decimals)
-            const totalBorrow = ethers.formatUnits(marketInfo.totalBorrow, decimals)
-            const utilization = parseFloat(totalBorrow) > 0 ? (parseFloat(totalBorrow) / parseFloat(totalSupply)) * 100 : 0
+          // Parse market info - handle both struct and array formats
+          let marketData: any = {}
+          
+          // Check if marketInfo is a struct or array
+          if (marketInfo && typeof marketInfo === 'object') {
+            // Try to access as struct first
+            if (marketInfo.totalSupply !== undefined) {
+              marketData = marketInfo
+            } else {
+              // Handle as array format - map indices to expected fields
+              // Based on the contract ABI, the order should be:
+              // [token, totalSupply, totalBorrow, supplyRate, borrowRate, exchangeRate, lastUpdateTime, isActive, collateralFactor]
+              marketData = {
+                token: marketInfo[0],
+                totalSupply: marketInfo[1] || BigInt(0),
+                totalBorrow: marketInfo[2] || BigInt(0),
+                supplyRate: marketInfo[3] || BigInt(0),
+                borrowRate: marketInfo[4] || BigInt(0),
+                exchangeRate: marketInfo[5] || BigInt(0),
+                lastUpdateTime: marketInfo[6] || BigInt(0),
+                isActive: marketInfo[7] || false,
+                collateralFactor: marketInfo[8] || BigInt(0)
+              }
+            }
+          }
+          
+          console.log('Parsed market data:', marketData)
+          
+          // Find token in our constants or create a default entry
+          const tokenData = DEFI_TOKENS[symbol.toLowerCase() as keyof typeof DEFI_TOKENS]
+          
+          // Check if token is whitelisted
+          let whitelisted = false
+          try {
+            whitelisted = await lendingContract.whitelistedTokens(marketAddress)
+          } catch (error) {
+            console.error(`Failed to check whitelist for ${symbol}:`, error)
+            whitelisted = false
+          }
+          
+          // If token not found in constants, create a default entry
+          if (!tokenData) {
+            console.log('Token not found in DEFI_TOKENS, creating default entry for:', symbol)
+            // Create a basic market object without trying to match DEFI_TOKENS type
+            const processedMarketData = {
+              token: symbol,
+              address: marketAddress,
+              logo: '🌙',
+              decimals: decimals,
+              totalSupply: ethers.formatUnits(marketData.totalSupply || BigInt(0), decimals),
+              totalBorrow: ethers.formatUnits(marketData.totalBorrow || BigInt(0), decimals),
+              supplyRate: parseFloat(ethers.formatUnits(marketData.supplyRate || BigInt(0), 18)).toFixed(2),
+              borrowRate: parseFloat(ethers.formatUnits(marketData.borrowRate || BigInt(0), 18)).toFixed(2),
+              exchangeRate: ethers.formatUnits(marketData.exchangeRate || BigInt(0), 18),
+              collateralFactor: parseFloat(ethers.formatUnits(marketData.collateralFactor || BigInt(0), 2)),
+              utilization: (parseFloat(ethers.formatUnits(marketData.totalSupply || BigInt(0), decimals)) > 0 ? 
+                (parseFloat(ethers.formatUnits(marketData.totalBorrow || BigInt(0), decimals)) / parseFloat(ethers.formatUnits(marketData.totalSupply || BigInt(0), decimals))) * 100 : 0).toFixed(1),
+              isActive: marketData.isActive || false,
+              lastUpdateTime: Number(marketData.lastUpdateTime || BigInt(0)) * 1000,
+              whitelisted: whitelisted
+            }
+            
+            console.log('Processed market data (default):', processedMarketData)
+            marketsData.push(processedMarketData)
+            continue // Skip the rest of the loop for this market
+          }
+          
+          const totalSupply = ethers.formatUnits(marketData.totalSupply || BigInt(0), decimals)
+          const totalBorrow = ethers.formatUnits(marketData.totalBorrow || BigInt(0), decimals)
+          const utilization = parseFloat(totalSupply) > 0 ? (parseFloat(totalBorrow) / parseFloat(totalSupply)) * 100 : 0
+          
+          const processedMarketData = {
+            token: symbol,
+            address: marketAddress,
+            logo: tokenData.logo,
+            decimals: decimals,
+            totalSupply: totalSupply,
+            totalBorrow: totalBorrow,
+            supplyRate: parseFloat(ethers.formatUnits(marketData.supplyRate || BigInt(0), 18)).toFixed(2),
+            borrowRate: parseFloat(ethers.formatUnits(marketData.borrowRate || BigInt(0), 18)).toFixed(2),
+            exchangeRate: ethers.formatUnits(marketData.exchangeRate || BigInt(0), 18),
+            collateralFactor: parseFloat(ethers.formatUnits(marketData.collateralFactor || BigInt(0), 2)),
+            utilization: utilization.toFixed(1),
+            isActive: marketData.isActive || false,
+            lastUpdateTime: Number(marketData.lastUpdateTime || BigInt(0)) * 1000,
+            whitelisted: whitelisted
+          }
+          
+          console.log('Processed market data:', processedMarketData)
+          marketsData.push(processedMarketData)
+          
+        } catch (error) {
+          console.error(`Failed to load market ${marketAddress}:`, error)
+          // Still add the market with basic info even if some data fails to load
+          try {
+            const tokenContract = new ethers.Contract(marketAddress, ERC20_ABI, provider)
+            const symbol = await tokenContract.symbol()
+            const decimals = await tokenContract.decimals()
             
             marketsData.push({
               token: symbol,
               address: marketAddress,
-              logo: tokenData.logo,
+              logo: '🌙',
               decimals: decimals,
-              totalSupply: totalSupply,
-              totalBorrow: totalBorrow,
-              supplyRate: parseFloat(ethers.formatUnits(marketInfo.supplyRate, 18)).toFixed(2),
-              borrowRate: parseFloat(ethers.formatUnits(marketInfo.borrowRate, 18)).toFixed(2),
-              exchangeRate: ethers.formatUnits(marketInfo.exchangeRate, 18),
-              collateralFactor: parseFloat(ethers.formatUnits(marketInfo.collateralFactor, 2)),
-              utilization: utilization.toFixed(1),
-              isActive: marketInfo.isActive,
-              lastUpdateTime: Number(marketInfo.lastUpdateTime) * 1000
+              totalSupply: '0',
+              totalBorrow: '0',
+              supplyRate: '0.00',
+              borrowRate: '0.00',
+              exchangeRate: '1.0',
+              collateralFactor: 0,
+              utilization: '0.0',
+              isActive: true,
+              lastUpdateTime: Date.now(),
+              whitelisted: false
             })
+          } catch (fallbackError) {
+            console.error(`Failed to load even basic info for market ${marketAddress}:`, fallbackError)
+            continue
           }
-        } catch (error) {
-          console.error(`Failed to load market ${marketAddress}:`, error)
-          continue
         }
       }
       
+      console.log('Final markets data:', marketsData)
       setMarkets(marketsData)
+      
     } catch (error) {
       console.error('Failed to load markets:', error)
       toast.error('Failed to load lending markets')
@@ -237,7 +359,7 @@ export default function IntegratedLendingInterface() {
     try {
       if (!provider || !userAddress) return
       
-      const lendingContract = new ethers.Contract(SomniaLendingContract.address, LENDING_ABI, provider)
+      const lendingContract = new ethers.Contract(SomniaLendingFixedContract.address, LENDING_ABI, provider)
       
       // Get user totals
       const userTotalsData = await lendingContract.getUserTotals(userAddress)
@@ -285,7 +407,7 @@ export default function IntegratedLendingInterface() {
     try {
       if (!provider) return
       
-      const lendingContract = new ethers.Contract(SomniaLendingContract.address, LENDING_ABI, provider)
+      const lendingContract = new ethers.Contract(SomniaLendingFixedContract.address, LENDING_ABI, provider)
       const stats = await lendingContract.getProtocolTotals()
       
       setProtocolStats({
@@ -301,11 +423,11 @@ export default function IntegratedLendingInterface() {
     }
   }, [provider])
 
-  // Load user balances
+  // Load user balances - simplified like SwapInterface
   const loadBalances = useCallback(async () => {
+    if (!provider || !userAddress) return
+    
     try {
-      if (!provider || !userAddress) return
-      
       const newBalances: Record<string, string> = {}
       
       for (const [symbol, token] of Object.entries(DEFI_TOKENS)) {
@@ -322,6 +444,7 @@ export default function IntegratedLendingInterface() {
         }
       }
       
+      console.log('Loaded balances:', newBalances)
       setBalances(newBalances)
     } catch (error) {
       console.error('Failed to load balances:', error)
@@ -338,11 +461,11 @@ export default function IntegratedLendingInterface() {
       const amountWei = ethers.parseUnits(amount, decimals)
       
       // Check current allowance
-      const allowance = await tokenContract.allowance(userAddress, SomniaLendingContract.address)
+      const allowance = await tokenContract.allowance(userAddress, SomniaLendingFixedContract.address)
       
       if (allowance < amountWei) {
         toast.loading('Approving token spending...')
-        const approveTx = await tokenContract.approve(SomniaLendingContract.address, ethers.MaxUint256)
+        const approveTx = await tokenContract.approve(SomniaLendingFixedContract.address, ethers.MaxUint256)
         await approveTx.wait()
         toast.dismiss()
         toast.success('Token approved!')
@@ -351,6 +474,21 @@ export default function IntegratedLendingInterface() {
       throw new Error('Token approval failed')
     }
   }
+
+  // Check if token is whitelisted
+  const isTokenWhitelisted = useCallback(async (tokenAddress: string) => {
+    if (!provider) return false
+    
+    try {
+      const lendingContract = new ethers.Contract(SomniaLendingFixedContract.address, LENDING_ABI, provider)
+      const whitelisted = await lendingContract.whitelistedTokens(tokenAddress)
+      console.log(`Token ${tokenAddress} whitelisted:`, whitelisted)
+      return whitelisted
+    } catch (error) {
+      console.error('Failed to check token whitelist:', error)
+      return false
+    }
+  }, [provider])
 
   // Supply tokens
   const supply = async () => {
@@ -362,14 +500,51 @@ export default function IntegratedLendingInterface() {
       const market = markets.find(m => m.token === selectedToken)
       if (!market) throw new Error('Market not found')
       
-      // Check and approve token
-      await checkAndApprove(market.address, actionAmount, market.decimals)
+      // Check if token is whitelisted
+      const whitelisted = await isTokenWhitelisted(market.address)
+      if (!whitelisted) {
+        throw new Error('Token is not whitelisted. Please contact admin to whitelist this token.')
+      }
       
-      // Execute supply
-      const lendingContract = new ethers.Contract(SomniaLendingContract.address, LENDING_ABI, signer)
+      // Allow supply to new markets (totalSupply can be 0 for first supply)
+      console.log('Supply validation:', {
+        token: selectedToken,
+        amount: actionAmount,
+        marketAddress: market.address,
+        marketActive: market.isActive,
+        totalSupply: market.totalSupply,
+        whitelisted: whitelisted
+      })
+      
+      // Check and approve token with better error handling
+      try {
+        await checkAndApprove(market.address, actionAmount, market.decimals)
+      } catch (approvalError) {
+        console.error('Token approval failed:', approvalError)
+        throw new Error('Token approval failed. Please try again.')
+      }
+      
+      // Execute supply with proper error handling
+      const lendingContract = new ethers.Contract(SomniaLendingFixedContract.address, LENDING_ABI, signer)
       const amountWei = ethers.parseUnits(actionAmount, market.decimals)
       
+      console.log('Executing supply with:', {
+        contractAddress: SomniaLendingFixedContract.address,
+        tokenAddress: market.address,
+        amountWei: amountWei.toString(),
+        amountHuman: actionAmount
+      })
+      
       toast.loading('Supplying tokens...')
+      
+      // First check if the transaction would succeed
+      try {
+        await lendingContract.supply.estimateGas(market.address, amountWei)
+      } catch (estimateError) {
+        console.error('Gas estimation failed:', estimateError)
+        throw new Error('Transaction would fail. Please check market conditions.')
+      }
+      
       const tx = await lendingContract.supply(market.address, amountWei)
       await tx.wait()
       
@@ -392,6 +567,8 @@ export default function IntegratedLendingInterface() {
         toast.error('Transaction cancelled by user')
       } else if (error.reason) {
         toast.error(`Supply failed: ${error.reason}`)
+      } else if (error.message) {
+        toast.error(`Supply failed: ${error.message}`)
       } else {
         toast.error('Supply failed. Please try again.')
       }
@@ -411,7 +588,7 @@ export default function IntegratedLendingInterface() {
       if (!market) throw new Error('Market not found')
       
       // Execute withdraw
-      const lendingContract = new ethers.Contract(SomniaLendingContract.address, LENDING_ABI, signer)
+      const lendingContract = new ethers.Contract(SomniaLendingFixedContract.address, LENDING_ABI, signer)
       const amountWei = ethers.parseUnits(actionAmount, market.decimals)
       
       toast.loading('Withdrawing tokens...')
@@ -456,7 +633,7 @@ export default function IntegratedLendingInterface() {
       if (!market) throw new Error('Market not found')
       
       // Execute borrow
-      const lendingContract = new ethers.Contract(SomniaLendingContract.address, LENDING_ABI, signer)
+      const lendingContract = new ethers.Contract(SomniaLendingFixedContract.address, LENDING_ABI, signer)
       const amountWei = ethers.parseUnits(actionAmount, market.decimals)
       
       toast.loading('Borrowing tokens...')
@@ -504,7 +681,7 @@ export default function IntegratedLendingInterface() {
       await checkAndApprove(market.address, actionAmount, market.decimals)
       
       // Execute repay
-      const lendingContract = new ethers.Contract(SomniaLendingContract.address, LENDING_ABI, signer)
+      const lendingContract = new ethers.Contract(SomniaLendingFixedContract.address, LENDING_ABI, signer)
       const amountWei = ethers.parseUnits(actionAmount, market.decimals)
       
       toast.loading('Repaying tokens...')
@@ -538,6 +715,73 @@ export default function IntegratedLendingInterface() {
     }
   }
 
+  // Create Lending Market
+  const createLendingMarket = async (tokenAddress: string) => {
+    if (!signer || !userAddress) {
+      toast.error('Wallet not connected')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const lendingContract = new ethers.Contract(SomniaLendingFixedContract.address, LENDING_ABI, signer)
+      
+      // Check if market already exists
+      try {
+        const existingMarket = await lendingContract.getMarket(tokenAddress)
+        if (existingMarket && existingMarket.isActive) {
+          toast.error('Market already exists for this token')
+          return
+        }
+      } catch (error) {
+        // Market doesn't exist, continue with creation
+      }
+      
+      toast.loading('Creating market...')
+      
+      // Create market with proper parameters
+      const collateralFactor = ethers.parseUnits('0.8', 2) // 80% collateral factor
+      const tx = await lendingContract.createMarket(tokenAddress, collateralFactor)
+      
+      toast.dismiss()
+      toast.loading('Confirming market creation...')
+      const receipt = await tx.wait()
+      
+      toast.dismiss()
+      toast.success('Market created successfully!')
+      
+      // Wait a bit for the market to be fully initialized
+      setTimeout(() => {
+        loadMarkets()
+        loadProtocolStats()
+      }, 2000)
+      
+    } catch (error: any) {
+      console.error('Failed to create market:', error)
+      toast.dismiss()
+      
+      if (error.code === 'ACTION_REJECTED') {
+        toast.error('Transaction cancelled by user')
+      } else if (error.reason) {
+        toast.error(`Market creation failed: ${error.reason}`)
+      } else if (error.message) {
+        toast.error(`Market creation failed: ${error.message}`)
+      } else {
+        toast.error('Market creation failed. Please try again.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Validate market readiness - relaxed validation
+  const isMarketReady = (market: any) => {
+    return market && 
+           market.isActive && 
+           market.address
+    // Removed totalSupply > 0 requirement to allow new markets
+  }
+
   // Calculate health factor
   const calculateHealthFactor = () => {
     const collateralValue = parseFloat(userTotals.collateral)
@@ -565,22 +809,28 @@ export default function IntegratedLendingInterface() {
     }
   }
 
-  // Effects
+  // Effects - simplified like SwapInterface
   useEffect(() => {
     if (isConnected && userAddress) {
       loadMarkets()
       loadProtocolStats()
-      loadUserPositions()
-      loadBalances()
+      loadBalances() // Load balances when connected
     }
-  }, [isConnected, userAddress, loadMarkets, loadProtocolStats, loadUserPositions, loadBalances])
+  }, [isConnected, userAddress])
 
-  // Load data when markets change
+  // Load user data when markets change
   useEffect(() => {
     if (isConnected && userAddress && markets.length > 0) {
       loadUserPositions()
     }
-  }, [markets, isConnected, userAddress, loadUserPositions])
+  }, [markets.length, isConnected, userAddress])
+
+  // Check if owner when connected
+  useEffect(() => {
+    if (isConnected && userAddress) {
+      checkIfOwner()
+    }
+  }, [isConnected, userAddress, checkIfOwner])
 
   // Action Modal Component
   const ActionModal = () => {
@@ -597,8 +847,18 @@ export default function IntegratedLendingInterface() {
         case 'withdraw':
           return position?.supplied || '0'
         case 'borrow':
-          // Simplified: 80% of collateral value
-          return (parseFloat(userTotals.collateral) * 0.8).toFixed(6)
+          // Calculate borrow capacity based on collateral and market conditions
+          const collateralValue = parseFloat(userTotals.collateral)
+          const currentBorrow = parseFloat(userTotals.borrow)
+          const borrowCapacity = collateralValue * 0.8 // 80% of collateral
+          const availableToBorrow = Math.max(0, borrowCapacity - currentBorrow)
+          
+          // Also consider market liquidity (total supply in the market)
+          const marketLiquidity = parseFloat(market?.totalSupply || '0')
+          const maxFromMarket = marketLiquidity * 0.8 // Don't borrow more than 80% of market liquidity
+          
+          // Return the smaller of the two limits
+          return Math.min(availableToBorrow, maxFromMarket).toFixed(6)
         case 'repay':
           return Math.min(parseFloat(position?.borrowed || '0'), parseFloat(balance)).toFixed(6)
         default:
@@ -635,12 +895,24 @@ export default function IntegratedLendingInterface() {
               <h3 className="text-xl font-bold text-white capitalize">
                 {activeModal} {selectedToken}
               </h3>
-              <button
-                onClick={() => setActiveModal(null)}
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                ✕
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => {
+                    loadBalances()
+                    toast.success('Balances refreshed!')
+                  }}
+                  className="p-2 text-slate-400 hover:text-white transition-colors"
+                  title="Refresh balances"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setActiveModal(null)}
+                  className="text-slate-400 hover:text-white transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
             
             <div className="space-y-4">
@@ -670,7 +942,9 @@ export default function IntegratedLendingInterface() {
               <div className="bg-slate-800/50 rounded-xl p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-400">Wallet Balance</span>
-                  <span className="text-white">{parseFloat(balance).toFixed(4)} {selectedToken}</span>
+                  <span className="text-white font-semibold">
+                    {parseFloat(balance).toFixed(4)} {selectedToken}
+                  </span>
                 </div>
                 {position && (
                   <>
@@ -692,6 +966,28 @@ export default function IntegratedLendingInterface() {
                     {activeModal === 'supply' || activeModal === 'withdraw' ? market?.supplyRate : market?.borrowRate}%
                   </span>
                 </div>
+                
+                {/* Show available amount for borrow */}
+                {activeModal === 'borrow' && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-400">Available to Borrow</span>
+                      <span className="text-blue-400 font-semibold">
+                        {getMaxAmount()} {selectedToken}
+                      </span>
+                    </div>
+                    
+                    {/* Debug info for borrow capacity */}
+                    <div className="text-xs text-slate-500 bg-slate-900/50 p-2 rounded-lg">
+                      <div className="font-medium text-slate-400 mb-1">Borrow Capacity Breakdown:</div>
+                      <div>Your Collateral: ${parseFloat(userTotals.collateral).toFixed(2)}</div>
+                      <div>Current Borrow: ${parseFloat(userTotals.borrow).toFixed(2)}</div>
+                      <div>Borrow Capacity (80%): ${(parseFloat(userTotals.collateral) * 0.8).toFixed(2)}</div>
+                      <div>Market Liquidity: {parseFloat(market?.totalSupply || '0').toFixed(4)} {selectedToken}</div>
+                      <div>Max from Market: {(parseFloat(market?.totalSupply || '0') * 0.8).toFixed(4)} {selectedToken}</div>
+                    </div>
+                  </>
+                )}
               </div>
               
               <button
@@ -710,6 +1006,98 @@ export default function IntegratedLendingInterface() {
         </motion.div>
       </AnimatePresence>
     )
+  }
+
+  // Admin functions
+  const whitelistToken = async (tokenAddress: string) => {
+    if (!signer || !userAddress) {
+      toast.error('Wallet not connected')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const lendingContract = new ethers.Contract(SomniaLendingFixedContract.address, LENDING_ABI, signer)
+      
+      toast.loading('Whitelisting token...')
+      const tx = await lendingContract.whitelistToken(tokenAddress)
+      await tx.wait()
+      toast.dismiss()
+      toast.success('Token whitelisted successfully!')
+      
+      // Reload markets to reflect changes
+      setTimeout(() => {
+        loadMarkets()
+      }, 1000)
+      
+    } catch (error: any) {
+      console.error('Failed to whitelist token:', error)
+      toast.dismiss()
+      
+      if (error.code === 'ACTION_REJECTED') {
+        toast.error('Transaction cancelled by user')
+      } else if (error.reason) {
+        toast.error(`Whitelist failed: ${error.reason}`)
+      } else if (error.message) {
+        toast.error(`Whitelist failed: ${error.message}`)
+      } else {
+        toast.error('Whitelist failed. Please try again.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const addInitialLiquidity = async (tokenAddress: string, amount: string) => {
+    if (!signer || !userAddress) {
+      toast.error('Wallet not connected')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const lendingContract = new ethers.Contract(SomniaLendingFixedContract.address, LENDING_ABI, signer)
+      
+      // First whitelist the token if not already whitelisted
+      const whitelisted = await isTokenWhitelisted(tokenAddress)
+      if (!whitelisted) {
+        toast.loading('Whitelisting token first...')
+        const whitelistTx = await lendingContract.whitelistToken(tokenAddress)
+        await whitelistTx.wait()
+        toast.dismiss()
+        toast.success('Token whitelisted!')
+      }
+      
+      // Add initial liquidity
+      toast.loading('Adding initial liquidity...')
+      const amountWei = ethers.parseUnits(amount, 18) // Assuming 18 decimals
+      const tx = await lendingContract.addInitialLiquidity(tokenAddress, amountWei)
+      await tx.wait()
+      toast.dismiss()
+      toast.success('Initial liquidity added successfully!')
+      
+      // Reload markets
+      setTimeout(() => {
+        loadMarkets()
+        loadProtocolStats()
+      }, 1000)
+      
+    } catch (error: any) {
+      console.error('Failed to add initial liquidity:', error)
+      toast.dismiss()
+      
+      if (error.code === 'ACTION_REJECTED') {
+        toast.error('Transaction cancelled by user')
+      } else if (error.reason) {
+        toast.error(`Add liquidity failed: ${error.reason}`)
+      } else if (error.message) {
+        toast.error(`Add liquidity failed: ${error.message}`)
+      } else {
+        toast.error('Add liquidity failed. Please try again.')
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -813,25 +1201,116 @@ export default function IntegratedLendingInterface() {
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-white">Lending Markets</h2>
-                <button
-                  onClick={() => {
-                    loadMarkets()
-                    loadProtocolStats()
-                    loadUserPositions()
-                    loadBalances()
-                  }}
-                  className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 transition-colors"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  <span className="text-sm">Refresh</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => {
+                      loadMarkets()
+                      loadProtocolStats()
+                      loadUserPositions()
+                      loadBalances()
+                    }}
+                    className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span className="text-sm">Refresh</span>
+                  </button>
+                  
+                  {/* Debug Button */}
+                  <button
+                    onClick={async () => {
+                      if (!provider) {
+                        toast.error('Provider not connected')
+                        return
+                      }
+                      
+                      try {
+                        const lendingContract = new ethers.Contract(SomniaLendingFixedContract.address, LENDING_ABI, provider)
+                        
+                        // Check contract state
+                        const allMarkets = await lendingContract.getAllMarkets()
+                        const protocolTotals = await lendingContract.getProtocolTotals()
+                        
+                        console.log('=== DEBUG INFO ===')
+                        console.log('Contract Address:', SomniaLendingFixedContract.address)
+                        console.log('All Markets:', allMarkets)
+                        console.log('Protocol Totals:', protocolTotals)
+                        
+                        if (allMarkets.length > 0) {
+                          const firstMarket = await lendingContract.getMarket(allMarkets[0])
+                          console.log('First Market Info:', firstMarket)
+                          
+                          const tokenContract = new ethers.Contract(allMarkets[0], ERC20_ABI, provider)
+                          const symbol = await tokenContract.symbol()
+                          const decimals = await tokenContract.decimals()
+                          console.log('First Market Token:', { symbol, decimals, address: allMarkets[0] })
+                        }
+                        
+                        toast.success(`Debug info logged. Found ${allMarkets.length} markets. Check console.`)
+                      } catch (error) {
+                        console.error('Debug failed:', error)
+                        toast.error('Debug failed. Check console for error.')
+                      }
+                    }}
+                    className="flex items-center space-x-2 text-yellow-400 hover:text-yellow-300 transition-colors text-xs"
+                  >
+                    <Info className="w-4 h-4" />
+                    <span>Debug</span>
+                  </button>
+                </div>
               </div>
               
               {markets.length === 0 ? (
                 <div className="text-center py-12">
                   <PieChart className="w-16 h-16 text-slate-500 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-white mb-2">No Markets Available</h3>
-                  <p className="text-slate-400">Lending markets will appear here when available.</p>
+                  <p className="text-slate-400 mb-6">Lending markets need to be created before you can start lending or borrowing.</p>
+                  
+                  {/* Market Creation Interface */}
+                  <div className="max-w-md mx-auto space-y-4">
+                    <div className="bg-slate-700/30 rounded-xl p-4 border border-slate-600/30">
+                      <h4 className="text-sm font-medium text-white mb-3">Create Lending Market</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs text-slate-400 mb-1 block">Select Token</label>
+                          <select
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                const tokenData = Object.values(DEFI_TOKENS).find(token => 
+                                  token.address === e.target.value
+                                )
+                                if (tokenData) {
+                                  createLendingMarket(tokenData.address)
+                                }
+                              }
+                            }}
+                            className="w-full bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                          >
+                            <option value="">Choose a token...</option>
+                            {Object.entries(DEFI_TOKENS).map(([symbol, tokenData]) => (
+                              <option key={symbol} value={tokenData.address}>
+                                {tokenData.logo} {symbol} - {tokenData.address?.slice(0, 10)}...
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        <div className="text-xs text-slate-500 bg-slate-800/50 p-3 rounded-lg">
+                          <p className="font-medium text-slate-300 mb-1">Default Market Settings:</p>
+                          <ul className="space-y-1">
+                            <li>• Supply Rate: 5% APY</li>
+                            <li>• Borrow Rate: 7% APY</li>
+                            <li>• Collateral Factor: 80%</li>
+                            <li>• Exchange Rate: 1.0</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <p className="text-xs text-slate-500">
+                      💡 <strong>Note:</strong> Creating a market requires admin privileges. If you're not an admin, 
+                      contact the protocol team to create markets for you.
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -853,6 +1332,39 @@ export default function IntegratedLendingInterface() {
                             <p className="text-sm text-slate-400">
                               Utilization: {market.utilization}% • CF: {market.collateralFactor}%
                             </p>
+                            {/* Market Status Indicator */}
+                            <div className="flex items-center space-x-2 mt-1">
+                              <div className={`w-2 h-2 rounded-full ${
+                                isMarketReady(market) ? 'bg-green-400' : 'bg-yellow-400'
+                              }`}></div>
+                              <span className={`text-xs ${
+                                isMarketReady(market) ? 'text-green-400' : 'text-yellow-400'
+                              }`}>
+                                {isMarketReady(market) ? 'Ready' : 'Initializing'}
+                              </span>
+                              {!isMarketReady(market) && (
+                                <span className="text-xs text-slate-500">
+                                  {!market.isActive ? 'Market not active' : 'Setting up'}
+                                </span>
+                              )}
+                              {isMarketReady(market) && parseFloat(market.totalSupply) === 0 && (
+                                <span className="text-xs text-blue-400">
+                                  New market - be first to supply!
+                                </span>
+                              )}
+                            </div>
+                            
+                            {/* Whitelist Status */}
+                            <div className="flex items-center space-x-2 mt-1">
+                              <div className={`w-2 h-2 rounded-full ${
+                                market.whitelisted ? 'bg-green-400' : 'bg-red-400'
+                              }`}></div>
+                              <span className={`text-xs ${
+                                market.whitelisted ? 'text-green-400' : 'text-red-400'
+                              }`}>
+                                {market.whitelisted ? 'Whitelisted' : 'Not Whitelisted'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                         <div className="text-right">
@@ -891,10 +1403,17 @@ export default function IntegratedLendingInterface() {
                               setActiveModal('supply')
                               setActionAmount('')
                             }}
-                            className="flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-xl font-medium transition-colors"
+                            disabled={!isMarketReady(market)}
+                            className={`flex items-center justify-center space-x-2 py-3 px-4 rounded-xl font-medium transition-colors ${
+                              isMarketReady(market)
+                                ? 'bg-green-600 hover:bg-green-700 text-white'
+                                : 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                            }`}
                           >
                             <ArrowUpRight className="w-4 h-4" />
-                            <span>Supply</span>
+                            <span>{isMarketReady(market) ? 
+                              (parseFloat(market.totalSupply) === 0 ? 'Be First to Supply!' : 'Supply') : 
+                              'Market Not Ready'}</span>
                           </button>
                           <button
                             onClick={() => {
@@ -902,10 +1421,17 @@ export default function IntegratedLendingInterface() {
                               setActiveModal('borrow')
                               setActionAmount('')
                             }}
-                            className="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-medium transition-colors"
+                            disabled={!isMarketReady(market) || parseFloat(market.totalSupply) === 0}
+                            className={`flex items-center justify-center space-x-2 py-3 px-4 rounded-xl font-medium transition-colors ${
+                              isMarketReady(market) && parseFloat(market.totalSupply) > 0
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                : 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                            }`}
                           >
                             <ArrowDownLeft className="w-4 h-4" />
-                            <span>Borrow</span>
+                            <span>{isMarketReady(market) ? 
+                              (parseFloat(market.totalSupply) === 0 ? 'No Liquidity Yet' : 'Borrow') : 
+                              'Market Not Ready'}</span>
                           </button>
                         </div>
                     </motion.div>
@@ -1075,34 +1601,131 @@ export default function IntegratedLendingInterface() {
             >
               <h3 className="text-xl font-bold text-white mb-4">Quick Actions</h3>
               <div className="space-y-3">
-                <button
-                  onClick={() => {
-                    if (markets.length > 0) {
-                      setSelectedToken(markets[0].token)
-                      setActiveModal('supply')
-                      setActionAmount('')
-                    }
-                  }}
-                  disabled={markets.length === 0}
-                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white py-3 px-4 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2"
-                >
-                  <ArrowUpRight className="w-4 h-4" />
-                  <span>{markets.length === 0 ? 'No Markets Available' : 'Supply Assets'}</span>
-                </button>
-                <button
-                  onClick={() => {
-                    if (markets.length > 0) {
-                      setSelectedToken(markets[0].token)
-                      setActiveModal('borrow')
-                      setActionAmount('')
-                    }
-                  }}
-                  disabled={markets.length === 0}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white py-3 px-4 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2"
-                >
-                  <ArrowDownLeft className="w-4 h-4" />
-                  <span>{markets.length === 0 ? 'No Markets Available' : 'Borrow Assets'}</span>
-                </button>
+                {markets.length === 0 ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        if (Object.keys(DEFI_TOKENS).length > 0) {
+                          const firstToken = Object.values(DEFI_TOKENS)[0]
+                          createLendingMarket(firstToken.address)
+                        }
+                      }}
+                      disabled={Object.keys(DEFI_TOKENS).length === 0}
+                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white py-3 px-4 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2"
+                    >
+                      <ArrowUpRight className="w-4 h-4" />
+                      <span>{Object.keys(DEFI_TOKENS).length === 0 ? 'No Tokens Available' : 'Create First Market'}</span>
+                    </button>
+                    
+                    {/* Admin Setup Buttons */}
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          if (Object.keys(DEFI_TOKENS).length > 0) {
+                            const firstToken = Object.values(DEFI_TOKENS)[0]
+                            whitelistToken(firstToken.address)
+                          }
+                        }}
+                        disabled={Object.keys(DEFI_TOKENS).length === 0}
+                        className="w-full bg-yellow-600 hover:bg-yellow-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white py-2 px-4 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 text-sm"
+                      >
+                        <Shield className="w-4 h-4" />
+                        <span>Whitelist Token</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          if (Object.keys(DEFI_TOKENS).length > 0) {
+                            const firstToken = Object.values(DEFI_TOKENS)[0]
+                            addInitialLiquidity(firstToken.address, '1000') // Add 1000 tokens as initial liquidity
+                          }
+                        }}
+                        disabled={Object.keys(DEFI_TOKENS).length === 0}
+                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white py-2 px-4 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 text-sm"
+                      >
+                        <Zap className="w-4 h-4" />
+                        <span>Add Initial Liquidity</span>
+                      </button>
+                    </div>
+                    
+                    {/* Debug Button */}
+                    <button
+                      onClick={async () => {
+                        if (!provider) {
+                          toast.error('Provider not connected')
+                          return
+                        }
+                        
+                        try {
+                          const lendingContract = new ethers.Contract(SomniaLendingFixedContract.address, LENDING_ABI, provider)
+                          
+                          // Check contract state
+                          const allMarkets = await lendingContract.getAllMarkets()
+                          const protocolTotals = await lendingContract.getProtocolTotals()
+                          
+                          console.log('=== LENDING DEBUG INFO ===')
+                          console.log('Contract Address:', SomniaLendingFixedContract.address)
+                          console.log('All Markets:', allMarkets)
+                          console.log('Protocol Totals:', protocolTotals)
+                          
+                          if (allMarkets.length > 0) {
+                            const firstMarket = await lendingContract.getMarket(allMarkets[0])
+                            console.log('First Market Info:', firstMarket)
+                            
+                            const tokenContract = new ethers.Contract(allMarkets[0], ERC20_ABI, provider)
+                            const symbol = await tokenContract.symbol()
+                            const decimals = await tokenContract.decimals()
+                            console.log('First Market Token:', { symbol, decimals, address: allMarkets[0] })
+                            
+                            // Check if token is whitelisted
+                            const whitelisted = await lendingContract.whitelistedTokens(allMarkets[0])
+                            console.log('Token whitelisted:', whitelisted)
+                          }
+                          
+                          toast.success(`Debug info logged. Found ${allMarkets.length} markets. Check console.`)
+                        } catch (error) {
+                          console.error('Debug failed:', error)
+                          toast.error('Debug failed. Check console for error.')
+                        }
+                      }}
+                      className="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2"
+                    >
+                      <Info className="w-4 h-4" />
+                      <span>Debug Contract State</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        if (markets.length > 0) {
+                          setSelectedToken(markets[0].token)
+                          setActiveModal('supply')
+                          setActionAmount('')
+                        }
+                      }}
+                      disabled={markets.length === 0}
+                      className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white py-3 px-4 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2"
+                    >
+                      <ArrowUpRight className="w-4 h-4" />
+                      <span>{markets.length === 0 ? 'No Markets Available' : 'Supply Assets'}</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (markets.length > 0) {
+                          setSelectedToken(markets[0].token)
+                          setActiveModal('borrow')
+                          setActionAmount('')
+                        }
+                      }}
+                      disabled={markets.length === 0}
+                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white py-3 px-4 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2"
+                    >
+                      <ArrowDownLeft className="w-4 h-4" />
+                      <span>{markets.length === 0 ? 'No Markets Available' : 'Borrow Assets'}</span>
+                    </button>
+                  </>
+                )}
               </div>
             </motion.div>
 

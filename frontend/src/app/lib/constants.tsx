@@ -13,7 +13,7 @@ export const DEFI_TOKENS = {
     symbol: 'WSOM',
     name: 'Wrapped Somnia',
     decimals: 18,
-    address: '0x956Ed4d2D7caD091b1C12dEC28AaEe5332D8e1e3',
+    address: '0x7E3EeD3f3B09Df10A06adA95Bc9887D5385935DB',
     logo: '🌙',
     color: 'from-blue-500 to-indigo-600'
   },
@@ -21,7 +21,7 @@ export const DEFI_TOKENS = {
     symbol: 'USDC',
     name: 'USD Coin',
     decimals: 6,
-    address: '0x4b1e4aE3ba5b0e1bEaf2627299BD4c87Af99fB5e',
+    address: '0xe2dB8A87E83b1A3fE7db7128d186079A9F958bEA',
     logo: '💵',
     color: 'from-green-500 to-emerald-600'
   },
@@ -29,7 +29,7 @@ export const DEFI_TOKENS = {
     symbol: 'SOMG',
     name: 'Somnia Governance',
     decimals: 18,
-    address: '0x95892d596d3427555b071DCBE2Ba2873dAFef122',
+    address: '0x58f5C4d7C08C6D9B45624ffE1C9fA3119e98991a',
     logo: '🗳️',
     color: 'from-purple-500 to-violet-600'
   },
@@ -54,7 +54,7 @@ export const DEFI_PROTOCOLS = {
   LENDING: {
     name: 'Lending Protocol',
     description: 'Borrow and lend tokens with interest',
-    address: '0x412D57f6cb2dAbF7C9d694AcB78b1c52d6140f56',
+    address: '0x086233C8613829AD73d00c63848d927dd6f2F345',
     icon: '💰'
   },
   STAKING: {
@@ -66,7 +66,7 @@ export const DEFI_PROTOCOLS = {
   GOVERNANCE: {
     name: 'Governance Protocol',
     description: 'Vote on protocol proposals',
-    address: '0x1f8E2fA22951F4a9a387af9675880716dbEdB345',
+    address: '0x58f5C4d7C08C6D9B45624ffE1C9fA3119e98991a',
     icon: '🗳️'
   }
 } as const

@@ -6,6 +6,7 @@ import { CheckCircle, Clock, AlertCircle, ExternalLink } from 'lucide-react'
 import { useFaucet } from '../lib/hooks/useFaucet'
 import { TestTokenFaucetContract } from '../../abi'
 import { toast } from 'react-hot-toast'
+import { ethers } from 'ethers'
 
 // Success Modal Component
 function SuccessModal({ isOpen, onClose, claimedTokens }: { 
@@ -241,13 +242,25 @@ export default function TokenFaucet() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-6 border border-slate-700"
           >
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-green-400" />
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Wallet Connected</h3>
               </div>
-              <h3 className="text-lg font-semibold text-white">Wallet Connected</h3>
+              <button
+                onClick={() => {
+                  // Force refresh the page to reconnect wallet
+                  window.location.reload()
+                }}
+                className="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded-lg transition-colors"
+                title="Refresh wallet connection"
+              >
+                🔄
+              </button>
             </div>
-            <p className="text-2xl font-bold text-green-400">
+            <p className={`text-2xl font-bold ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
               {isConnected ? '✅ Yes' : '❌ No'}
             </p>
             <p className="text-sm text-slate-400 mt-2">
@@ -255,6 +268,272 @@ export default function TokenFaucet() {
             </p>
           </motion.div>
         </div>
+
+        {/* Wallet Connection Help */}
+        {!isConnected && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="bg-amber-500/20 border border-amber-500/30 rounded-xl p-6 mb-8 text-center"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <AlertCircle className="w-6 h-6 text-amber-400" />
+              <h3 className="text-xl font-semibold text-amber-400">Wallet Connection Issue</h3>
+            </div>
+            <p className="text-amber-300 text-lg font-medium mb-3">
+              Your wallet appears to be connected in the header but not detected here
+            </p>
+            <div className="space-y-2 text-amber-200/80 text-sm">
+              <p>Try these solutions:</p>
+              <ul className="space-y-1">
+                <li>• Click the refresh button (🔄) above</li>
+                <li>• Disconnect and reconnect your wallet in the header</li>
+                <li>• Refresh the entire page</li>
+                <li>• Check if you're on the correct network (Somnia Testnet)</li>
+              </ul>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Contract Test Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.45 }}
+          className="text-center mb-8"
+        >
+          <button
+            onClick={async () => {
+              try {
+                console.log('🧪 Testing contract calls...')
+                
+                // Test basic contract interaction
+                if (typeof window !== 'undefined' && window.ethereum) {
+                  const provider = new ethers.BrowserProvider(window.ethereum)
+                  const signer = await provider.getSigner()
+                  
+                  console.log('✅ Provider and signer created')
+                  console.log('📝 Signer address:', await signer.getAddress())
+                  
+                  // Test the canClaim function
+                  const contract = new ethers.Contract(
+                    TestTokenFaucetContract.address,
+                    TestTokenFaucetContract.abi,
+                    signer
+                  )
+                  
+                  console.log('✅ Contract instance created')
+                  console.log('🏗️ Contract address:', TestTokenFaucetContract.address)
+                  
+                  try {
+                    const canClaimResult = await contract.canClaim(await signer.getAddress())
+                    console.log('✅ canClaim result:', canClaimResult)
+                  } catch (error) {
+                    console.error('❌ canClaim failed:', error)
+                  }
+                  
+                  try {
+                    const timeUntilNextClaim = await contract.getTimeUntilNextClaim(await signer.getAddress())
+                    console.log('✅ getTimeUntilNextClaim result:', timeUntilNextClaim.toString())
+                  } catch (error) {
+                    console.error('❌ getTimeUntilNextClaim failed:', error)
+                  }
+                  
+                  toast.success('Contract test completed! Check console for results.')
+                }
+              } catch (error) {
+                console.error('❌ Contract test failed:', error)
+                toast.error('Contract test failed! Check console for errors.')
+              }
+            }}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-colors"
+          >
+            🧪 Test Contract Calls
+          </button>
+          <p className="text-slate-400 text-sm mt-2">
+            Test basic contract functions to debug issues
+          </p>
+        </motion.div>
+
+        {/* Direct Claim Button (Backup) */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="text-center mb-8"
+        >
+          <button
+            onClick={async () => {
+              try {
+                console.log('🚀 Direct claim attempt...')
+                
+                if (typeof window !== 'undefined' && window.ethereum) {
+                  const provider = new ethers.BrowserProvider(window.ethereum)
+                  const signer = await provider.getSigner()
+                  
+                  const contract = new ethers.Contract(
+                    TestTokenFaucetContract.address,
+                    TestTokenFaucetContract.abi,
+                    signer
+                  )
+                  
+                  toast.loading('Claiming tokens directly...')
+                  
+                  // Try to claim all tokens directly
+                  const tx = await contract.claimTokens()
+                  console.log('✅ Transaction sent:', tx.hash)
+                  
+                  toast.dismiss()
+                  toast.loading('Confirming transaction...')
+                  
+                  const receipt = await tx.wait()
+                  console.log('✅ Transaction confirmed:', receipt)
+                  
+                  toast.dismiss()
+                  toast.success('Tokens claimed successfully! 🎉')
+                  
+                  // Refresh the page to update UI
+                  setTimeout(() => {
+                    window.location.reload()
+                  }, 2000)
+                  
+                }
+              } catch (error: any) {
+                console.error('❌ Direct claim failed:', error)
+                toast.dismiss()
+                
+                if (error.code === 'ACTION_REJECTED') {
+                  toast.error('Transaction cancelled by user')
+                } else if (error.reason) {
+                  toast.error(`Claim failed: ${error.reason}`)
+                } else if (error.message) {
+                  toast.error(`Claim failed: ${error.message}`)
+                } else {
+                  toast.error('Claim failed. Please try again.')
+                }
+              }
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium transition-colors"
+          >
+            🚀 Direct Claim (Backup)
+          </button>
+          <p className="text-slate-400 text-sm mt-2">
+            Bypass Wagmi hooks and claim directly with ethers.js
+          </p>
+        </motion.div>
+
+        {/* Grant Minting Permissions Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.55 }}
+          className="text-center mb-8"
+        >
+          <button
+            onClick={async () => {
+              try {
+                console.log('🔑 Granting minting permissions to faucet...')
+                
+                if (typeof window !== 'undefined' && window.ethereum) {
+                  const provider = new ethers.BrowserProvider(window.ethereum)
+                  const signer = await provider.getSigner()
+                  
+                  // Check if user is the owner of the token contracts
+                  const wsomContract = new ethers.Contract(
+                    '0x7E3EeD3f3B09Df10A06adA95Bc9887D5385935DB', // WSOM address
+                    ['function owner() view returns (address)', 'function addAuthorizedMinter(address minter)'],
+                    signer
+                  )
+                  
+                  const usdcContract = new ethers.Contract(
+                    '0xe2dB8A87E83b1A3fE7db7128d186079A9F958bEA', // USDC address
+                    ['function owner() view returns (address)', 'function addAuthorizedMinter(address minter)'],
+                    signer
+                  )
+                  
+                  const somgContract = new ethers.Contract(
+                    '0x58f5C4d7C08C6D9B45624ffE1C9fA3119e98991a', // SOMG address
+                    ['function owner() view returns (address)', 'function addAuthorizedMinter(address minter)'],
+                    signer
+                  )
+                  
+                  // Check ownership
+                  const userAddress = await signer.getAddress()
+                  const wsomOwner = await wsomContract.owner()
+                  const usdcOwner = await usdcContract.owner()
+                  const somgOwner = await somgContract.owner()
+                  
+                  console.log('🔍 Token ownership check:', {
+                    userAddress,
+                    wsomOwner,
+                    usdcOwner,
+                    somgOwner,
+                    faucetAddress: TestTokenFaucetContract.address
+                  })
+                  
+                  if (userAddress.toLowerCase() !== wsomOwner.toLowerCase() &&
+                      userAddress.toLowerCase() !== usdcOwner.toLowerCase() &&
+                      userAddress.toLowerCase() !== somgOwner.toLowerCase()) {
+                    toast.error('You are not the owner of the token contracts. Only the owner can grant minting permissions.')
+                    return
+                  }
+                  
+                  toast.loading('Granting minting permissions...')
+                  
+                  // Grant permissions to faucet
+                  const faucetAddress = TestTokenFaucetContract.address
+                  
+                  if (userAddress.toLowerCase() === wsomOwner.toLowerCase()) {
+                    const wsomTx = await wsomContract.addAuthorizedMinter(faucetAddress)
+                    await wsomTx.wait()
+                    console.log('✅ WSOM minting permission granted')
+                  }
+                  
+                  if (userAddress.toLowerCase() === usdcOwner.toLowerCase()) {
+                    const usdcTx = await usdcContract.addAuthorizedMinter(faucetAddress)
+                    await usdcTx.wait()
+                    console.log('✅ USDC minting permission granted')
+                  }
+                  
+                  if (userAddress.toLowerCase() === somgOwner.toLowerCase()) {
+                    const somgTx = await somgContract.addAuthorizedMinter(faucetAddress)
+                    await somgTx.wait()
+                    console.log('✅ SOMG minting permission granted')
+                  }
+                  
+                  toast.dismiss()
+                  toast.success('Minting permissions granted! Faucet should now work.')
+                  
+                  // Refresh the page
+                  setTimeout(() => {
+                    window.location.reload()
+                  }, 2000)
+                  
+                }
+              } catch (error: any) {
+                console.error('❌ Grant permissions failed:', error)
+                toast.dismiss()
+                
+                if (error.code === 'ACTION_REJECTED') {
+                  toast.error('Transaction cancelled by user')
+                } else if (error.reason) {
+                  toast.error(`Grant permissions failed: ${error.reason}`)
+                } else if (error.message) {
+                  toast.error(`Grant permissions failed: ${error.message}`)
+                } else {
+                  toast.error('Grant permissions failed. Please try again.')
+                }
+              }
+            }}
+            className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-xl font-medium transition-colors"
+          >
+            🔑 Grant Minting Permissions
+          </button>
+          <p className="text-slate-400 text-sm mt-2">
+            Grant faucet permission to mint tokens (requires token contract ownership)
+          </p>
+        </motion.div>
 
         {/* Cooldown Timer */}
         {lastClaimTime && timeUntilNextClaim > 0 && (

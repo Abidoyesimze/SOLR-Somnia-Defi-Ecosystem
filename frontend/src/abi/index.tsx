@@ -1,6 +1,7 @@
 import SomniaAMM from "./SomniaAMM.json";
 import SomniaGovernance from "./SomniaGovernance.json";
 import SomniaLending from "./SomniaLending.json";
+import SomniaLendingFixed from "./SomniaLendingFixed.json";
 import SomniaStaking from "./SomniaStaking.json";
 import SomniaLPToken from "./SomniaLPToken.json";
 import TestTokenFaucet from "./TestTokenFaucet.json";
@@ -13,13 +14,18 @@ export const SomniaAmmContract = {
 }
 
 export const SomniaGovernanceContract = {
-    address: "0x1f8E2fA22951F4a9a387af9675880716dbEdB345",
+    address: "0x58f5C4d7C08C6D9B45624ffE1C9fA3119e98991a",
     abi: SomniaGovernance
 }
 
 export const SomniaLendingContract = {
-    address: "0x412D57f6cb2dAbF7C9d694AcB78b1c52d6140f56",
+    address: "0x086233C8613829AD73d00c63848d927dd6f2F345",
     abi: SomniaLending
+}
+
+export const SomniaLendingFixedContract = {
+    address: "0x086233C8613829AD73d00c63848d927dd6f2F345",
+    abi: SomniaLendingFixed
 }
 
 export const SomniaStakingContract = {
@@ -34,17 +40,17 @@ export const SomniaLPTokenContract = {
 }
 
 export const TestTokenFaucetContract = {
-    address: "0x96562913b9A78983cB459e7A1B36c7166F7F1734",
+    address: "0x72631F951C3ea4795D938859F4476104087106B7",
     abi: TestTokenFaucet
 }
 
 export const USDCTokenContract = {
-    address: "0x4b1e4aE3ba5b0e1bEaf2627299BD4c87Af99fB5e", 
+    address: "0xe2dB8A87E83b1A3fE7db7128d186079A9F958bEA", 
     abi: USDCToken
 }
 
 export const TestWrappedSomniaContract = {
-    address: "0x956Ed4d2D7caD091b1C12dEC28AaEe5332D8e1e3", 
+    address: "0x7E3EeD3f3B09Df10A06adA95Bc9887D5385935DB", 
     abi: TestWrappedSomnia
 }
 
