@@ -38,44 +38,49 @@ export const DEFI_TOKENS = {
     name: 'Somnia Liquidity Provider',
     decimals: 18,
     address: '0x22e308D3F15C44456413FA0a4C75B113aB348B6D',
-    logo: '🔄',
+    logo: '',
     color: 'from-yellow-500 to-orange-500'
   }
 } as const
 
-// DeFi protocols in the ecosystem
-export const DEFI_PROTOCOLS = {
-  AMM: {
+// DeFi protocols in the ecosystem (as array for mapping)
+export const DEFI_PROTOCOLS = [
+  {
     name: 'Automated Market Maker',
     description: 'Decentralized exchange for token swapping',
     address: '0xD1c15525a977e590dE0178a598C9BE0B5788851B',
-    icon: '🔄'
+    icon: '',
+    color: 'bg-blue-500'
   },
-  LENDING: {
+  {
     name: 'Lending Protocol',
     description: 'Borrow and lend tokens with interest',
     address: '0x086233C8613829AD73d00c63848d927dd6f2F345',
-    icon: '💰'
+    icon: '',
+    color: 'bg-green-500'
   },
-  STAKING: {
+  {
     name: 'Staking Protocol',
     description: 'Stake tokens to earn rewards',
     address: '0xcd593658F4A1ceDb941efe7991c5Ff5AA5899F23',
-    icon: '🔒'
+    icon: '',
+    color: 'bg-purple-500'
   },
-  GOVERNANCE: {
+  {
     name: 'Governance Protocol',
     description: 'Vote on protocol proposals',
     address: '0x58f5C4d7C08C6D9B45624ffE1C9fA3119e98991a',
-    icon: '🗳️'
+    icon: '',
+    color: 'bg-orange-500'
   }
-} as const
+] as const
 
 // DeFi categories for navigation
 export const DEFI_CATEGORIES = [
   {
     name: 'Trade',
     description: 'Swap tokens with low slippage',
+    icon: '',
     icon: '🔄',
     color: 'from-blue-500 to-indigo-600',
     route: '/trade'

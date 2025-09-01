@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ethers } from 'ethers'
 import { toast } from 'react-hot-toast'
@@ -24,29 +24,13 @@ import {
 import { DEFI_TOKENS, CONTRACTS, SOMNIA_CONFIG } from '../lib/constants'
 import { SomniaAmmContract } from '../../abi'
 import { useStore } from '../lib/store'
+import NavigationTabs from './NavigationTabs'
+import TokenSelect from './TokenSelect'
+import { useAccount, useChainId, useWalletClient, usePublicClient } from 'wagmi'
+import { useConnectModal } from '@rainbow-me/rainbowkit'
 
-// Complete AMM Contract ABI
-const AMM_ABI = [
-  // View functions
-  "function getAmountOut(uint256 amountIn, address tokenIn, address tokenOut) external view returns (uint256)",
-  "function getPoolInfo(address token0, address token1) external view returns (tuple(address token0, address token1, uint256 reserve0, uint256 reserve1, uint256 totalSupply, uint256 fee0, uint256 fee1, address lpToken))",
-  "function checkPoolExists(address token0, address token1) external view returns (bool)",
-  "function getLPToken(address token0, address token1) external view returns (address)",
-  "function getPoolsForToken(address token) external view returns (address[])",
-  "function getStats() external view returns (uint256 totalVolume, uint256 totalFees)",
-  
-  // Write functions
-  "function swap(address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOutMin) external returns (uint256)",
-  "function createPool(address token0, address token1) external returns (address)",
-  "function addLiquidity(address token0, address token1, uint256 amount0Desired, uint256 amount1Desired, uint256 amount0Min, uint256 amount1Min) external returns (uint256 liquidity, uint256 amount0, uint256 amount1)",
-  "function removeLiquidity(address token0, address token1, uint256 liquidity, uint256 amount0Min, uint256 amount1Min) external returns (uint256 amount0, uint256 amount1)",
-  
-  // Events
-  "event Swap(address indexed sender, address indexed tokenIn, address indexed tokenOut, uint256 amountIn, uint256 amountOut)",
-  "event PoolCreated(address indexed token0, address indexed token1, address lpToken)",
-  "event LiquidityAdded(address indexed provider, address indexed token0, address indexed token1, uint256 amount0, uint256 amount1, uint256 liquidity)",
-  "event LiquidityRemoved(address indexed provider, address indexed token0, address indexed token1, uint256 amount0, uint256 amount1, uint256 liquidity)"
-]
+// Use the actual AMM ABI from the JSON file
+const AMM_ABI = SomniaAmmContract.abi
 
 // LP Token ABI
 const LP_TOKEN_ABI = [
@@ -70,17 +54,26 @@ const ERC20_ABI = [
 
 export default function CompleteDEXInterface() {
   const store = useStore()
+  const { address: userAddress, isConnected } = useAccount()
+  const chainId = useChainId()
+  const { data: walletClient } = useWalletClient()
+  const publicClient = usePublicClient()
+  const { openConnectModal } = useConnectModal()
+  
+  // Stable read-only provider via Somnia RPC
+  const readProvider = useMemo(() => new ethers.JsonRpcProvider(SOMNIA_CONFIG.RPC_URL), [])
+  
+  // Helper to get ethers signer from Wagmi wallet client on-demand
+  const getSigner = useCallback(async () => {
+    if (!walletClient) return null
+    // walletClient.transport implements EIP-1193 request
+    const browserProvider = new ethers.BrowserProvider((walletClient as any).transport)
+    return await browserProvider.getSigner()
+  }, [walletClient])
   
   // Navigation state
   const [currentView, setCurrentView] = useState('swap') // 'swap', 'liquidity'
   const [liquidityTab, setLiquidityTab] = useState('add') // 'add', 'remove', 'pools'
-
-  // Web3 state
-  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null)
-  const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null)
-  const [userAddress, setUserAddress] = useState('')
-  const [chainId, setChainId] = useState<number | null>(null)
-  const [isConnected, setIsConnected] = useState(false)
 
   // Common state
   const [balances, setBalances] = useState<Record<string, string>>({})
@@ -130,92 +123,16 @@ export default function CompleteDEXInterface() {
     lpTokenAddress: string;
   }>>([])
 
-  // Initialize Web3
-  useEffect(() => {
-    const initWeb3 = async () => {
-      if (typeof window !== 'undefined' && window.ethereum) {
-        try {
-          const web3Provider = new ethers.BrowserProvider(window.ethereum)
-          setProvider(web3Provider)
-          
-          // Check if already connected
-          const accounts = await web3Provider.listAccounts()
-          if (accounts.length > 0) {
-            const web3Signer = await web3Provider.getSigner()
-            setSigner(web3Signer)
-            const address = await web3Signer.getAddress()
-            setUserAddress(address)
-            setIsConnected(true)
-            
-            // Get chain ID
-            const network = await web3Provider.getNetwork()
-            setChainId(Number(network.chainId))
-          }
-
-          // Listen for account changes
-          window.ethereum.on('accountsChanged', (accounts: string[]) => {
-            if (accounts.length === 0) {
-              setIsConnected(false)
-              setUserAddress('')
-              setSigner(null)
-            } else {
-              window.location.reload()
-            }
-          })
-
-          // Listen for chain changes
-          window.ethereum.on('chainChanged', () => {
-            window.location.reload()
-          })
-
-        } catch (error) {
-          console.error('Failed to initialize Web3:', error)
-          toast.error('Failed to initialize wallet connection')
-        }
-      }
-    }
-    
-    initWeb3()
-  }, [])
-
-  // Connect wallet
-  const connectWallet = async () => {
-    if (!window.ethereum) {
-      toast.error('Please install MetaMask or another Web3 wallet')
-      return
-    }
-    
-    try {
-      await window.ethereum.request({ method: 'eth_requestAccounts' })
-      const web3Provider = new ethers.BrowserProvider(window.ethereum)
-      const web3Signer = await web3Provider.getSigner()
-      const address = await web3Signer.getAddress()
-      
-      setProvider(web3Provider)
-      setSigner(web3Signer)
-      setUserAddress(address)
-      setIsConnected(true)
-      
-      const network = await web3Provider.getNetwork()
-      setChainId(Number(network.chainId))
-      
-      toast.success('Wallet connected successfully!')
-    } catch (error) {
-      console.error('Failed to connect wallet:', error)
-      toast.error('Failed to connect wallet')
-    }
-  }
-
   // Load user balances
   const loadBalances = useCallback(async () => {
-    if (!provider || !userAddress) return
+    if (!userAddress) return
     
     try {
       const newBalances: Record<string, string> = {}
       
       for (const [symbol, token] of Object.entries(DEFI_TOKENS)) {
         if (token.address) {
-          const tokenContract = new ethers.Contract(token.address, ERC20_ABI, provider)
+          const tokenContract = new ethers.Contract(token.address, ERC20_ABI, readProvider)
           const balance = await tokenContract.balanceOf(userAddress)
           const decimals = await tokenContract.decimals()
           newBalances[symbol] = ethers.formatUnits(balance, decimals)
@@ -227,14 +144,12 @@ export default function CompleteDEXInterface() {
       console.error('Failed to load balances:', error)
       toast.error('Failed to load token balances')
     }
-  }, [provider, userAddress])
+  }, [readProvider, userAddress])
 
   // Load protocol stats
   const loadProtocolStats = useCallback(async () => {
-    if (!provider) return
-    
     try {
-      const ammContract = new ethers.Contract(SomniaAmmContract.address, AMM_ABI, provider)
+      const ammContract = new ethers.Contract(SomniaAmmContract.address, AMM_ABI, readProvider)
       const [totalVolume, totalFees] = await ammContract.getStats()
       
       // Calculate total TVL by summing all pools (simplified)
@@ -253,11 +168,11 @@ export default function CompleteDEXInterface() {
         totalTVL: '0'
       })
     }
-  }, [provider])
+  }, [readProvider])
 
   // Load pool data
   const loadPoolData = useCallback(async () => {
-    if (!provider || !token0 || !token1) return
+    if (!token0 || !token1) return
     
     try {
       const token0Data = DEFI_TOKENS[token0 as keyof typeof DEFI_TOKENS]
@@ -265,7 +180,7 @@ export default function CompleteDEXInterface() {
       
       if (!token0Data?.address || !token1Data?.address) return
       
-      const ammContract = new ethers.Contract(SomniaAmmContract.address, AMM_ABI, provider)
+      const ammContract = new ethers.Contract(SomniaAmmContract.address, AMM_ABI, readProvider)
       
       // Check if pool exists
       const poolExists = await ammContract.checkPoolExists(token0Data.address, token1Data.address)
@@ -281,7 +196,7 @@ export default function CompleteDEXInterface() {
         let userPoolShare = '0'
         
         if (userAddress && lpTokenAddress) {
-          const lpContract = new ethers.Contract(lpTokenAddress, LP_TOKEN_ABI, provider)
+          const lpContract = new ethers.Contract(lpTokenAddress, LP_TOKEN_ABI, readProvider)
           const lpBalance = await lpContract.balanceOf(userAddress)
           const lpDecimals = await lpContract.decimals()
           userLPBalance = ethers.formatUnits(lpBalance, lpDecimals)
@@ -325,11 +240,11 @@ export default function CompleteDEXInterface() {
         reserve1: '0'
       }))
     }
-  }, [provider, token0, token1, userAddress])
+  }, [readProvider, token0, token1, userAddress])
 
   // Calculate swap output
   const calculateSwapOutput = useCallback(async () => {
-    if (!provider || !fromAmount || parseFloat(fromAmount) <= 0 || !fromToken || !toToken) {
+    if (!fromAmount || parseFloat(fromAmount) <= 0 || !fromToken || !toToken) {
       setToAmount('')
       setExchangeRate('0')
       setPriceImpact(0)
@@ -344,7 +259,7 @@ export default function CompleteDEXInterface() {
       
       if (!fromTokenData?.address || !toTokenData?.address) return
       
-      const ammContract = new ethers.Contract(SomniaAmmContract.address, AMM_ABI, provider)
+      const ammContract = new ethers.Contract(SomniaAmmContract.address, AMM_ABI, readProvider)
       
       // Check if pool exists
       const poolExists = await ammContract.checkPoolExists(fromTokenData.address, toTokenData.address)
@@ -391,7 +306,7 @@ export default function CompleteDEXInterface() {
     } finally {
       setLoading(false)
     }
-  }, [provider, fromAmount, fromToken, toToken])
+  }, [readProvider, fromAmount, fromToken, toToken])
 
   // Calculate liquidity amounts
   const handleLiquidityAmountChange = useCallback((value: string, isToken0?: boolean) => {
@@ -424,6 +339,7 @@ export default function CompleteDEXInterface() {
 
   // Check and approve token allowance
   const checkAndApprove = async (tokenAddress: string, amount: string, decimals: number, spenderAddress: string = SomniaAmmContract.address) => {
+    const signer = await getSigner()
     if (!signer || !userAddress) throw new Error('Wallet not connected')
     
     const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer)
@@ -443,6 +359,7 @@ export default function CompleteDEXInterface() {
 
   // Execute swap
   const executeSwap = async () => {
+    const signer = await getSigner()
     if (!signer || !fromAmount || !toAmount || !fromToken || !toToken) return
     
     try {
@@ -508,6 +425,7 @@ export default function CompleteDEXInterface() {
 
   // Add liquidity
   const addLiquidity = async () => {
+    const signer = await getSigner()
     if (!signer || !amount0 || !amount1 || !token0 || !token1) return
     
     try {
@@ -586,6 +504,7 @@ export default function CompleteDEXInterface() {
 
   // Remove liquidity
   const removeLiquidity = async () => {
+    const signer = await getSigner()
     if (!signer || removePercentage <= 0 || !token0 || !token1) return
     
     try {
@@ -655,7 +574,7 @@ export default function CompleteDEXInterface() {
 
   // Load user pools
   const loadUserPools = useCallback(async () => {
-    if (!provider || !userAddress) return
+    if (!userAddress) return
     
     try {
       const userPoolsList: Array<{
@@ -679,12 +598,12 @@ export default function CompleteDEXInterface() {
           if (!token0Data.address || !token1Data.address) continue
           
           try {
-            const ammContract = new ethers.Contract(SomniaAmmContract.address, AMM_ABI, provider)
+            const ammContract = new ethers.Contract(SomniaAmmContract.address, AMM_ABI, readProvider)
             const poolExists = await ammContract.checkPoolExists(token0Data.address, token1Data.address)
             
             if (poolExists) {
               const lpTokenAddress = await ammContract.getLPToken(token0Data.address, token1Data.address)
-              const lpContract = new ethers.Contract(lpTokenAddress, LP_TOKEN_ABI, provider)
+              const lpContract = new ethers.Contract(lpTokenAddress, LP_TOKEN_ABI, readProvider)
               const lpBalance = await lpContract.balanceOf(userAddress)
               
               if (lpBalance > 0) {
@@ -716,7 +635,7 @@ export default function CompleteDEXInterface() {
     } catch (error) {
       console.error('Failed to load user pools:', error)
     }
-  }, [provider, userAddress])
+  }, [readProvider, userAddress])
 
   // Effects
   useEffect(() => {
@@ -759,104 +678,7 @@ export default function CompleteDEXInterface() {
     return balance >= requiredAmount
   }
 
-  // Navigation component
-  const NavigationTabs = () => (
-    <div className="flex items-center space-x-1 bg-slate-800/50 p-1 rounded-2xl mb-6">
-      <motion.button
-        onClick={() => setCurrentView('swap')}
-        className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-          currentView === 'swap'
-            ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25'
-            : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-        }`}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <ArrowDown className="w-4 h-4" />
-        <span>Swap</span>
-      </motion.button>
-      
-      <motion.button
-        onClick={() => setCurrentView('liquidity')}
-        className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-          currentView === 'liquidity'
-            ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25'
-            : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-        }`}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <TrendingUp className="w-4 h-4" />
-        <span>Liquidity</span>
-      </motion.button>
-    </div>
-  )
-
-  // Token select component
-  const TokenSelect = ({ 
-    token, 
-    onSelect, 
-    label, 
-    amount, 
-    onAmountChange, 
-    showMax = true, 
-    disabled = false 
-  }: {
-    token: string;
-    onSelect: (token: string) => void;
-    label: string;
-    amount: string;
-    onAmountChange: (value: string, isToken0?: boolean) => void;
-    showMax?: boolean;
-    disabled?: boolean;
-  }) => (
-    <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-slate-400">{label}</span>
-        {showMax && (
-            <button 
-            onClick={() => onAmountChange(balances[token] || '0', label.includes('A') || label.includes('From'))}
-            className="text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium"
-            >
-            MAX
-            </button>
-        )}
-          </div>
-          
-      <div className="flex items-center space-x-3">
-        <div className="flex-1">
-              <input 
-            type="text"
-            value={amount}
-            onChange={(e) => onAmountChange(e.target.value, label.includes('A') || label.includes('From'))}
-                placeholder="0.0"
-            disabled={disabled}
-            className="w-full bg-transparent text-2xl font-bold text-white placeholder-slate-500 outline-none disabled:opacity-50"
-          />
-          <div className="text-sm text-slate-500 mt-1">
-            Balance: {parseFloat(balances[token] || '0').toFixed(4)} {token}
-          </div>
-        </div>
-        
-        <select
-          value={token}
-          onChange={(e) => onSelect(e.target.value)}
-          disabled={disabled}
-          className="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-xl transition-all duration-200 border border-slate-600/50 text-white font-semibold disabled:opacity-50"
-        >
-          {Object.entries(DEFI_TOKENS).map(([symbol, tokenData]) => (
-            <option key={symbol} value={symbol}>
-              {tokenData.logo} {symbol}
-            </option>
-          ))}
-        </select>
-      </div>
-      
-      {!hasSufficientBalance(token, amount) && amount && parseFloat(amount) > 0 && (
-        <div className="text-xs text-red-400 mt-2">Insufficient balance</div>
-      )}
-    </div>
-  )
+  // Navigation and TokenSelect moved to components
 
   // Swap interface
   const SwapInterface = () => (
@@ -906,13 +728,25 @@ export default function CompleteDEXInterface() {
         disabled={true}
       />
 
+      {/* Chain Status Warning */}
+      {chainId && chainId !== SOMNIA_CONFIG.CHAIN_ID && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+          <div className="flex items-center space-x-2">
+            <AlertTriangle className="w-4 h-4 text-red-400" />
+            <span className="text-sm text-red-300">
+              Please switch to Somnia network (Chain ID: {SOMNIA_CONFIG.CHAIN_ID})
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Price Impact Warning */}
       {priceImpact > 3 && (
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
-              <div className="flex items-center space-x-2">
-            <AlertTriangle className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm text-yellow-300">
-              High price impact: {priceImpact.toFixed(2)}%
+        <div className={`${priceImpact > 15 ? 'bg-red-500/10 border-red-500/20' : 'bg-yellow-500/10 border-yellow-500/20'} border rounded-xl p-3`}>
+          <div className="flex items-center space-x-2">
+            <AlertTriangle className={`w-4 h-4 ${priceImpact > 15 ? 'text-red-400' : 'text-yellow-400'}`} />
+            <span className={`text-sm ${priceImpact > 15 ? 'text-red-300' : 'text-yellow-300'}`}>
+              {priceImpact > 15 ? 'Extremely high' : 'High'} price impact: {priceImpact.toFixed(2)}%
             </span>
           </div>
         </div>
@@ -926,7 +760,21 @@ export default function CompleteDEXInterface() {
         >
           <div className="flex justify-between text-sm">
             <span className="text-slate-400">Exchange Rate</span>
-            <span className="text-white font-medium">1 {fromToken} = {exchangeRate} {toToken}</span>
+            <div className="text-right">
+              <div className="text-white font-medium">1 {fromToken} = {exchangeRate} {toToken}</div>
+              <button 
+                onClick={() => {
+                  const rate = parseFloat(exchangeRate)
+                  if (rate > 0) {
+                    const inverseRate = (1 / rate).toFixed(6)
+                    toast.info(`1 ${toToken} = ${inverseRate} ${fromToken}`)
+                  }
+                }}
+                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                ↔ View inverse rate
+              </button>
+            </div>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-slate-400">Trading Fee (0.3%)</span>
@@ -934,20 +782,29 @@ export default function CompleteDEXInterface() {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-slate-400">Price Impact</span>
-            <div className={`font-medium ${priceImpact > 3 ? 'text-yellow-400' : priceImpact > 1 ? 'text-orange-400' : 'text-green-400'}`}>
-              {priceImpact.toFixed(2)}%
+            <div className={`font-medium flex items-center space-x-1 ${
+              priceImpact > 5 ? 'text-red-400' : 
+              priceImpact > 3 ? 'text-yellow-400' : 
+              priceImpact > 1 ? 'text-orange-400' : 'text-green-400'
+            }`}>
+              <span>{priceImpact.toFixed(2)}%</span>
+              {priceImpact > 5 && <AlertTriangle className="w-3 h-3" />}
             </div>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-slate-400">Minimum Received</span>
             <span className="text-white font-medium">{(parseFloat(toAmount) * (100 - slippage) / 100).toFixed(6)} {toToken}</span>
           </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-400">Route</span>
+            <span className="text-white font-medium text-xs">{fromToken} → {toToken}</span>
+          </div>
         </motion.div>
       )}
 
       {!isConnected ? (
         <motion.button
-          onClick={connectWallet}
+          onClick={openConnectModal}
           className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white py-4 rounded-2xl font-semibold text-lg transition-all duration-200 flex items-center justify-center space-x-2"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -1098,7 +955,7 @@ export default function CompleteDEXInterface() {
 
       {!isConnected ? (
         <motion.button
-          onClick={connectWallet}
+          onClick={openConnectModal}
           className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white py-4 rounded-2xl font-semibold text-lg transition-all duration-200 flex items-center justify-center space-x-2"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -1221,7 +1078,7 @@ export default function CompleteDEXInterface() {
 
           {!isConnected ? (
             <motion.button
-              onClick={connectWallet}
+              onClick={() => openConnectModal()}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white py-4 rounded-2xl font-semibold text-lg transition-all duration-200 flex items-center justify-center space-x-2"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -1362,11 +1219,11 @@ export default function CompleteDEXInterface() {
                 </div>
               ) : (
                 <button
-                  onClick={connectWallet}
+                  onClick={() => openConnectModal()}
                   className="flex items-center space-x-2 bg-slate-800/50 hover:bg-slate-700/50 px-3 py-2 rounded-xl border border-slate-700/50 transition-colors"
                 >
                   <Wallet className="w-4 h-4 text-slate-400" />
-                  <span className="text-sm text-slate-400">Connect</span>
+                  <span className="text-sm text-slate-400">Connect Wallet</span>
                 </button>
               )}
               <button
