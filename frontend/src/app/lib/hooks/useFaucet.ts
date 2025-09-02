@@ -27,6 +27,7 @@ export function useFaucet() {
   const [error, setError] = useState<string | null>(null)
   const [lastClaimTime, setLastClaimTime] = useState<number | null>(null)
   const [timeUntilNextClaim, setTimeUntilNextClaim] = useState<number>(0)
+  const [isSuccessAcknowledged, setIsSuccessAcknowledged] = useState(false)
   
   // Manual wallet connection check as fallback
   const [manualWalletState, setManualWalletState] = useState({
@@ -180,7 +181,12 @@ export function useFaucet() {
   const isLoadingState = isLoading || isClaimPending || isClaimConfirming || isClaimSpecificPending || isClaimSpecificConfirming
 
   // Combined success state
-  const isClaimSuccessState = isClaimSuccess || isClaimSpecificSuccess
+  const isClaimSuccessState = (isClaimSuccess || isClaimSpecificSuccess) && !isSuccessAcknowledged
+
+  // Function to reset the success state
+  const resetClaimStatus = useCallback(() => {
+    setIsSuccessAcknowledged(true)
+  }, [])
 
   // Claim all tokens function
   const claimTokens = useCallback(async () => {
@@ -272,6 +278,9 @@ export function useFaucet() {
       
       // Reset error state
       setError(null)
+
+      // Reset the acknowledged state so the modal can be shown
+      setIsSuccessAcknowledged(false)
     }
   }, [isClaimSuccessState, refetchCanClaim, refetchClaimStatus])
 
@@ -328,6 +337,7 @@ export function useFaucet() {
     // Functions
     claimTokens,
     claimSpecificToken,
+    resetClaimStatus,
     
     // Utilities
     clearError: () => setError(null),

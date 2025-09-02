@@ -74,6 +74,7 @@ export default function CompleteDEXInterface() {
   // Navigation state
   const [currentView, setCurrentView] = useState('swap') // 'swap', 'liquidity'
   const [liquidityTab, setLiquidityTab] = useState('add') // 'add', 'remove', 'pools'
+  const [isMounted, setIsMounted] = useState(false)
 
   // Common state
   const [balances, setBalances] = useState<Record<string, string>>({})
@@ -670,6 +671,10 @@ export default function CompleteDEXInterface() {
     return () => clearTimeout(timer)
   }, [fromAmount, fromToken, toToken, currentView, calculateSwapOutput])
 
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
   // Check if user has sufficient balance
   const hasSufficientBalance = (token: string, amount: string) => {
     if (!amount || !token) return false
@@ -841,6 +846,37 @@ export default function CompleteDEXInterface() {
       )}
     </motion.div>
   )
+
+  // Liquidity interface tabs
+  const LoadingSkeleton = () => (
+    <div className="max-w-lg mx-auto animate-pulse">
+      <div className="bg-slate-900/90 backdrop-blur-xl rounded-3xl border border-slate-700/50 overflow-hidden shadow-2xl">
+        {/* Header */}
+        <div className="p-6 border-b border-slate-700/50">
+          <div className="flex items-center justify-between mb-6">
+            <div className="h-8 bg-slate-700 rounded w-1/3"></div>
+            <div className="flex items-center space-x-2">
+              <div className="h-10 w-32 bg-slate-800/50 rounded-xl border border-slate-700/50"></div>
+              <div className="h-10 w-10 bg-slate-700/50 rounded-xl"></div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-1 bg-slate-800/50 p-1 rounded-2xl">
+            <div className="h-10 w-1/2 bg-slate-700 rounded-xl"></div>
+            <div className="h-10 w-1/2 bg-slate-700/50 rounded-xl"></div>
+          </div>
+        </div>
+        {/* Main Content */}
+        <div className="p-6 space-y-4">
+          <div className="h-28 bg-slate-800/50 rounded-2xl"></div>
+          <div className="flex justify-center">
+            <div className="w-12 h-12 bg-slate-700/50 rounded-full border border-slate-600/50"></div>
+          </div>
+          <div className="h-28 bg-slate-800/50 rounded-2xl"></div>
+          <div className="h-16 bg-slate-700 rounded-2xl"></div>
+        </div>
+      </div>
+    </div>
+  );
 
   // Liquidity interface tabs
   const LiquidityTabs = () => (
@@ -1199,6 +1235,10 @@ export default function CompleteDEXInterface() {
     </motion.div>
   )
 
+  if (!isMounted) {
+    return <LoadingSkeleton />;
+  }
+
   return (
     <div className="max-w-lg mx-auto">
       <motion.div 
@@ -1229,77 +1269,61 @@ export default function CompleteDEXInterface() {
                   <Wallet className="w-4 h-4 text-slate-400" />
                   <span className="text-sm text-slate-400">Connect Wallet</span>
                 </button>
-              )}
-              <button
-                onClick={() => setShowSettings(!showSettings)}
-                className="p-2 hover:bg-slate-700/50 rounded-xl transition-colors"
-              >
-                <Settings className="w-5 h-5 text-slate-400" />
-              </button>
-            </div>
+            )}
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 hover:bg-slate-700/50 rounded-xl transition-colors"
+            >
+              <Settings className="w-5 h-5 text-slate-400" />
+            </button>
           </div>
-
-          <NavigationTabs currentView={currentView} onChange={setCurrentView} />
         </div>
 
-        {/* Settings Panel */}
-        <AnimatePresence>
-          {showSettings && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="px-6 py-4 bg-slate-800/30 border-b border-slate-700/30"
-            >
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-slate-400 mb-2 block">Slippage Tolerance</label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="number"
-                      value={slippage}
-                      onChange={(e) => setSlippage(parseFloat(e.target.value) || 0.5)}
-                      step="0.1"
-                      min="0.1"
-                      max="50"
-                      className="flex-1 bg-slate-700 text-white px-3 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
-                    />
-                    <span className="text-white">%</span>
-                  </div>
-                  <div className="flex space-x-2 mt-2">
-                    {[0.1, 0.5, 1.0].map((value) => (
-                      <button
-                        key={value}
-                        onClick={() => setSlippage(value)}
-                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                          slippage === value 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                        }`}
-                      >
-                        {value}%
-                      </button>
-                    ))}
-                  </div>
+        <NavigationTabs currentView={currentView} onChange={setCurrentView} />
+      </div>
+
+      {/* Settings Panel */}
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="px-6 py-4 bg-slate-800/30 border-b border-slate-700/30"
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-slate-400 mb-2 block">Slippage Tolerance</label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    value={slippage}
+                    onChange={(e) => setSlippage(parseFloat(e.target.value) || 0.5)}
+                    step="0.1"
+                    min="0.1"
+                    max="50"
+                    className="flex-1 bg-slate-700 text-white px-3 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                  <span className="text-white">%</span>
                 </div>
-                {currentView === 'liquidity' && (
-                  <div>
-                    <label className="text-sm font-medium text-slate-400 mb-2 block">Transaction Deadline</label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="number"
-                        value={deadline}
-                        onChange={(e) => setDeadline(parseInt(e.target.value) || 20)}
-                        min="1"
-                        max="180"
-                        className="flex-1 bg-slate-700 text-white px-3 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
-                      />
-                      <span className="text-white">min</span>
-                    </div>
-                  </div>
-                )}
+                <div className="flex space-x-2 mt-2">
+                  {[0.1, 0.5, 1.0].map((value) => (
+                    <button
+                      key={value}
+                      onClick={() => setSlippage(value)}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                        slippage === value 
+                          ? 'bg-blue-500 text-white' 
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}
+                    >
+                      {value}%
+                    </button>
+                  ))}
+                </div>
               </div>
-            </motion.div>
+            </div>
+          </motion.div>
           )}
         </AnimatePresence>
 

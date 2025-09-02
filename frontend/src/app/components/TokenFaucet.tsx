@@ -71,7 +71,8 @@ export default function TokenFaucet() {
     claimTokens,
     claimSpecificToken,
     lastClaimTime,
-    timeUntilNextClaim
+    timeUntilNextClaim,
+    resetClaimStatus
   } = useFaucet()
 
   const [showSuccessModal, setShowSuccessModal] = useState(false)
@@ -176,7 +177,10 @@ export default function TokenFaucet() {
       {/* Success Modal */}
       <SuccessModal 
         isOpen={showSuccessModal} 
-        onClose={() => setShowSuccessModal(false)}
+        onClose={() => {
+          setShowSuccessModal(false)
+          resetClaimStatus()
+        }}
         claimedTokens={claimedTokens}
       />
 
