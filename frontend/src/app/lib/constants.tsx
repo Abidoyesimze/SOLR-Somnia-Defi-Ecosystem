@@ -80,7 +80,6 @@ export const DEFI_CATEGORIES = [
   {
     name: 'Trade',
     description: 'Swap tokens with low slippage',
-    icon: '',
     icon: '🔄',
     color: 'from-blue-500 to-indigo-600',
     route: '/trade'

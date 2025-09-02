@@ -21,7 +21,7 @@ export const useTokenBalance = (tokenSymbol: string) => {
         setBalance('0')
         
         // Example of what the real implementation would look like:
-        // const token = DEFI_TOKENS.find(t => t.symbol === tokenSymbol)
+        // const token = Object.values(DEFI_TOKENS).find(t => t.symbol === tokenSymbol)
         // const balance = await readContract({
         //   address: token.address as `0x${string}`,
         //   abi: erc20ABI,
@@ -41,7 +41,7 @@ export const useTokenBalance = (tokenSymbol: string) => {
     fetchBalance()
   }, [address, isConnected, tokenSymbol])
 
-  const token = DEFI_TOKENS.find(t => t.symbol === tokenSymbol)
+  const token = Object.values(DEFI_TOKENS).find(t => t.symbol === tokenSymbol)
   const formattedBalance = token ? parseFloat(balance).toFixed(4) : '0'
   const usdValue = 0 // TODO: Implement price fetching when available
 

@@ -693,6 +693,7 @@ export default function CompleteDEXInterface() {
         onSelect={setFromToken}
         label="From"
         amount={fromAmount}
+        balances={balances}
         onAmountChange={(value: string) => {
           if (value === '' || /^\d*\.?\d*$/.test(value)) {
             setFromAmount(value)
@@ -723,6 +724,7 @@ export default function CompleteDEXInterface() {
         onSelect={setToToken}
         label="To (Estimated)"
         amount={toAmount}
+        balances={balances}
         onAmountChange={() => {}}
         showMax={false}
         disabled={true}
@@ -767,7 +769,7 @@ export default function CompleteDEXInterface() {
                   const rate = parseFloat(exchangeRate)
                   if (rate > 0) {
                     const inverseRate = (1 / rate).toFixed(6)
-                    toast.info(`1 ${toToken} = ${inverseRate} ${fromToken}`)
+                    toast(`1 ${toToken} = ${inverseRate} ${fromToken}`)
                   }
                 }}
                 className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
@@ -804,7 +806,7 @@ export default function CompleteDEXInterface() {
 
       {!isConnected ? (
         <motion.button
-          onClick={openConnectModal}
+          onClick={() => openConnectModal && openConnectModal()}
           className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white py-4 rounded-2xl font-semibold text-lg transition-all duration-200 flex items-center justify-center space-x-2"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -903,6 +905,7 @@ export default function CompleteDEXInterface() {
         onSelect={setToken0}
         label="Token A"
         amount={amount0}
+        balances={balances}
         onAmountChange={handleLiquidityAmountChange}
       />
 
@@ -917,6 +920,7 @@ export default function CompleteDEXInterface() {
         onSelect={setToken1}
         label="Token B"
         amount={amount1}
+        balances={balances}
         onAmountChange={handleLiquidityAmountChange}
       />
 
@@ -955,7 +959,7 @@ export default function CompleteDEXInterface() {
 
       {!isConnected ? (
         <motion.button
-          onClick={openConnectModal}
+          onClick={() => openConnectModal && openConnectModal()}
           className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white py-4 rounded-2xl font-semibold text-lg transition-all duration-200 flex items-center justify-center space-x-2"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -1235,7 +1239,7 @@ export default function CompleteDEXInterface() {
             </div>
           </div>
 
-          <NavigationTabs />
+          <NavigationTabs currentView={currentView} onChange={setCurrentView} />
         </div>
 
         {/* Settings Panel */}

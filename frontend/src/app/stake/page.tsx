@@ -26,20 +26,78 @@ import {
 } from 'lucide-react'
 
 // Import your constants and contracts
-import { DEFI_TOKENS, SomniaStakingContract } from '../lib/constants'
-import { STAKING_ABI, ERC20_ABI } from '../../abi'
-import { useAccount, useChainId, useWalletClient, usePublicClient } from 'wagmi'
+import { DEFI_TOKENS } from '../lib/constants'
+import { SomniaStakingContract } from "../../abi";
+import { SOMNIA_CONFIG } from "../lib/constants";
+import { useAccount, useChainId, useWalletClient, usePublicClient } from 'wagmi';
+import NavigationTabs from '../components/NavigationTabs';
 
 const ERC20_ABI = [
-  "function balanceOf(address owner) view returns (uint256)",
-  "function decimals() view returns (uint8)",
+  "function approve(address spender, uint256 amount) returns (bool)",
   "function allowance(address owner, address spender) view returns (uint256)",
-  "function approve(address spender, uint256 amount) returns (bool)"
+  "function balanceOf(address owner) view returns (uint256)"
 ]
 
 export default function IntegratedStakingInterface() {
   // Web3 state
-  const { address: userAddress, isConnected } = useAccount()
+  const { address: userAddress, isConnected } = useAccount();
+
+  // Define StakingPoolCard component
+  const StakingPoolCard = ({ pool }: { pool: any }) => {
+    const { token, apy, totalStaked } = pool;
+    const tokenInfo = DEFI_TOKENS[token as keyof typeof DEFI_TOKENS];
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 shadow-lg hover:border-purple-500/50 transition-all duration-300"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            <div className={`text-3xl ${tokenInfo?.color}`}>{tokenInfo?.logo}</div>
+            <div>
+              <h3 className="text-xl font-bold text-white">{token}</h3>
+              <p className="text-sm text-slate-400">Staking Pool</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-lg font-semibold text-green-400">{apy}</p>
+            <p className="text-xs text-slate-500">APY</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 text-sm mb-6">
+          <div className="bg-slate-800/50 p-3 rounded-lg">
+            <p className="text-slate-400">Total Staked</p>
+            <p className="font-mono text-white">{totalStaked}</p>
+          </div>
+          <div className="bg-slate-800/50 p-3 rounded-lg">
+            <p className="text-slate-400">Your Stake</p>
+            <p className="font-mono text-white">{dataState.balances[token] ? parseFloat(dataState.balances[token]).toFixed(4) : '0.00'}</p>
+          </div>
+        </div>
+
+        <div className="flex space-x-3">
+          <button
+            onClick={() => openModal('stake', token)}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+          >
+            <ArrowDownLeft className="w-4 h-4" />
+            <span>Stake</span>
+          </button>
+          <button
+            onClick={() => openModal('claim', token)}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+          >
+            <Award className="w-4 h-4" />
+            <span>Claim</span>
+          </button>
+        </div>
+      </motion.div>
+    );
+  };
   const chainId = useChainId()
   const { data: walletClient } = useWalletClient()
   const publicClient = usePublicClient()
@@ -75,7 +133,19 @@ export default function IntegratedStakingInterface() {
   // Destructure state for easier access
   const { stakingPools, userStakes, stakingTiers, pendingRewards, protocolStats, balances, ui } = dataState
   const { loading, activeModal, selectedPool, selectedTier, actionAmount } = ui
-  const { amount: calcAmount, tier: calcTier, duration: calcDuration } = calculatorState
+  const { amount: calcAmount, tier: calcTier, duration: calcDuration } = calculatorState;
+
+  const openModal = (modalType: string, poolToken: string) => {
+    setDataState(prev => ({
+      ...prev,
+      ui: {
+        ...prev.ui,
+        activeModal: modalType,
+        selectedPool: poolToken,
+        actionAmount: '',
+      }
+    }));
+  };
   
   const getSigner = useCallback(async () => {
     if (!walletClient) return null
@@ -87,7 +157,7 @@ export default function IntegratedStakingInterface() {
     try {
       if (!userAddress) return
       
-      const stakingContract = new ethers.Contract(SomniaStakingContract.address, STAKING_ABI, readProvider)
+      const stakingContract = new ethers.Contract(SomniaStakingContract.address, SomniaStakingContract.abi, readProvider)
       const owner = await stakingContract.owner()
       
       setIsOwner(owner.toLowerCase() === userAddress.toLowerCase())
@@ -102,24 +172,24 @@ export default function IntegratedStakingInterface() {
     try {
       if (!readProvider) return
       
-      const stakingContract = new ethers.Contract(SomniaStakingContract.address, STAKING_ABI, readProvider)
+      const stakingContract = new ethers.Contract(SomniaStakingContract.address, SomniaStakingContract.abi, readProvider)
       
       // Get all pools from the contract
       const poolAddresses = await stakingContract.getAllPools()
       
       if (poolAddresses.length === 0) {
-        setStakingPools([])
+        setDataState(prev => ({ ...prev, stakingPools: [] }))
         return
       }
       
-      const poolsData = []
+      const poolsData: any[] = [];
       
       for (const poolAddress of poolAddresses) {
         try {
           const poolInfo = await stakingContract.getPool(poolAddress)
           
           // Get token info
-          const tokenContract = new ethers.Contract(poolAddress, ERC20_ABI, provider)
+                    const tokenContract = new ethers.Contract(poolAddress, ERC20_ABI, readProvider)
           const symbol = await tokenContract.symbol()
           const decimals = await tokenContract.decimals()
           
@@ -147,17 +217,19 @@ export default function IntegratedStakingInterface() {
         }
       }
       
-      setDataState(prev => ({ ...prev, stakingPools: poolsData }))
+      if (poolsData.length > 0) {
+        setDataState(prev => ({ ...prev, stakingPools: poolsData }));
+      }
     } catch (error) {
       console.error('Failed to load staking pools:', error)
-      setStakingPools([])
+      setDataState(prev => ({ ...prev, stakingPools: [] }))
     }
   }, [readProvider])
 
   // Load protocol stats
   const loadProtocolStats = useCallback(async () => {
     try {
-      const stakingContract = new ethers.Contract(SomniaStakingContract.address, STAKING_ABI, readProvider)
+      const stakingContract = new ethers.Contract(SomniaStakingContract.address, SomniaStakingContract.abi, readProvider)
       const stats = await stakingContract.getProtocolStats()
       
       setDataState(prev => ({ ...prev, protocolStats: {
@@ -178,7 +250,7 @@ export default function IntegratedStakingInterface() {
     try {
       if (stakingPools.length === 0) return
       
-      const stakingContract = new ethers.Contract(SomniaStakingContract.address, STAKING_ABI, readProvider)
+      const stakingContract = new ethers.Contract(SomniaStakingContract.address, SomniaStakingContract.abi, readProvider)
       
       const tiersData: Record<string, any> = {}
       
@@ -211,7 +283,7 @@ export default function IntegratedStakingInterface() {
     try {
       if (!userAddress || stakingPools.length === 0) return
       
-      const stakingContract = new ethers.Contract(SomniaStakingContract.address, STAKING_ABI, readProvider)
+      const stakingContract = new ethers.Contract(SomniaStakingContract.address, SomniaStakingContract.abi, readProvider)
       
       const userStakesData: Record<string, any> = {}
       const pendingRewardsData: Record<string, any> = {}
@@ -314,7 +386,7 @@ export default function IntegratedStakingInterface() {
       const pool = stakingPools.find(p => p.token === token)
       if (!pool) throw new Error('Pool not found')
       
-      const stakingContract = new ethers.Contract(SomniaStakingContract.address, STAKING_ABI, signer)
+            const stakingContract = new ethers.Contract(SomniaStakingContract.address, SomniaStakingContract.abi, signer)
       
       // Execute claim rewards
     
@@ -402,7 +474,7 @@ const ActionModal = () => {
                 {tiers.length > 0 ? (
                   <select
                     value={dataState.ui.selectedTier}
-                    onChange={(e) => setDataState(prev => ({ ...prev, ui: { ...prev.ui, selectedTier: parseInt(e.target.value) } })))}
+                    onChange={(e) => setDataState(prev => ({ ...prev, ui: { ...prev.ui, selectedTier: parseInt(e.target.value) } }))}
                     className="w-full bg-slate-800 text-white px-4 py-3 rounded-xl border border-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
                   >
                     {tiers.map((tier: any, index: number) => (
@@ -446,12 +518,29 @@ const ActionModal = () => {
                   </div>
                 )}
               </div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      )}
-      
-      <motion.div
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+return (
+    <div className="min-h-screen bg-slate-950 text-white">
+      <Toaster position="top-center" toastOptions={{ className: 'bg-slate-800 text-white' }} />
+      <Header />
+      <main className="p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+          <div className="lg:col-span-2 space-y-8">
+            {stakingPools.map(pool => (
+              <StakingPoolCard key={pool.token} pool={pool} />
+            ))}
+          </div>
+
+          <div className="space-y-6">
+            <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
@@ -467,13 +556,14 @@ const ActionModal = () => {
             </p>
           </div>
         </div>
-      </motion.div>
-          </div>
+          </motion.div>
         </div>
       </div>
-
-      {/* Action Modal */}
-      {activeModal && <ActionModal />}
     </div>
+  </main>
+
+  {/* Action Modal */}
+  {activeModal && <ActionModal />}
+</div>
   )
 }

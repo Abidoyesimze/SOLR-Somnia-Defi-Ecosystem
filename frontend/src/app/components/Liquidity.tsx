@@ -23,9 +23,11 @@ const DEFI_TOKENS = {
   USDC: { symbol: 'USDC', logo: '💵', address: '0x...', decimals: 6 },
   WETH: { symbol: 'WETH', logo: '⚡', address: '0x...', decimals: 18 },
   USDT: { symbol: 'USDT', logo: '💰', address: '0x...', decimals: 6 }
-}
+} as const;
 
-const POPULAR_PAIRS = [
+type TokenSymbol = keyof typeof DEFI_TOKENS;
+
+const POPULAR_PAIRS: { token0: TokenSymbol; token1: TokenSymbol; apr: string; tvl: string }[] = [
   { token0: 'WSOM', token1: 'USDC', apr: '24.5%', tvl: '$1.2M' },
   { token0: 'WETH', token1: 'USDC', apr: '18.3%', tvl: '$890K' },
   { token0: 'WSOM', token1: 'WETH', apr: '31.2%', tvl: '$650K' },
@@ -34,8 +36,8 @@ const POPULAR_PAIRS = [
 
 export default function LiquidityInterface() {
   const [activeTab, setActiveTab] = useState('add') // 'add', 'remove', 'pools'
-  const [token0, setToken0] = useState('WSOM')
-  const [token1, setToken1] = useState('USDC')
+  const [token0, setToken0] = useState<TokenSymbol>('WSOM')
+  const [token1, setToken1] = useState<TokenSymbol>('USDC')
   const [amount0, setAmount0] = useState('')
   const [amount1, setAmount1] = useState('')
   const [removePercentage, setRemovePercentage] = useState(25)
@@ -54,7 +56,7 @@ export default function LiquidityInterface() {
   })
 
   // Mock balances
-  const [balances] = useState({
+  const [balances] = useState<Record<TokenSymbol, string>>({
     WSOM: '1250.75',
     USDC: '5000.00',
     WETH: '2.45',
@@ -85,7 +87,7 @@ export default function LiquidityInterface() {
     }
   }
 
-  const TabButton = ({ id, label, icon: Icon, isActive, onClick }) => (
+  const TabButton = ({ id, label, icon: Icon, isActive, onClick }: { id: string; label: string; icon: React.ElementType; isActive: boolean; onClick: () => void }) => (
     <motion.button
       onClick={onClick}
       className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
@@ -101,7 +103,7 @@ export default function LiquidityInterface() {
     </motion.button>
   )
 
-  const TokenSelect = ({ token, onSelect, label, amount, onAmountChange, showMax = true }) => (
+  const TokenSelect = ({ token, onSelect, label, amount, onAmountChange, showMax = true }: { token: TokenSymbol; onSelect: (token: TokenSymbol) => void; label: string; amount: string; onAmountChange: (value: string, isToken0: boolean) => void; showMax?: boolean }) => (
     <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-medium text-slate-400">{label}</span>
@@ -145,6 +147,41 @@ export default function LiquidityInterface() {
         Balance: {parseFloat(balances[token] || '0').toFixed(4)} {token}
       </div>
     </div>
+  )
+
+  const TokenModal = ({ isOpen, onClose, onSelect }: { isOpen: boolean; onClose: () => void; onSelect: (token: TokenSymbol) => void }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200"
+    >
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-medium text-slate-400">Select Token</span>
+        <button 
+          onClick={onClose}
+          className="text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium"
+        >
+          Close
+        </button>
+      </div>
+      
+      <div className="space-y-2">
+        {Object.keys(DEFI_TOKENS).map((token) => (
+          <button
+            key={token}
+            onClick={() => {
+              onSelect(token as TokenSymbol)
+              onClose()
+            }}
+            className="flex items-center space-x-3 p-3 bg-slate-700/50 rounded-xl hover:bg-slate-600/50 transition-all duration-200"
+          >
+            <span className="text-lg">{DEFI_TOKENS[token as TokenSymbol]?.logo}</span>
+            <span className="font-medium text-white">{token}</span>
+          </button>
+        ))}
+      </div>
+    </motion.div>
   )
 
   const AddLiquidityTab = () => (

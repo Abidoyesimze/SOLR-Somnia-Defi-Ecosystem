@@ -24,11 +24,17 @@ const somniaChain = {
   },
 }
 
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+
+if (!projectId) {
+  throw new Error("NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is not set. Please add it to your .env.local file.");
+}
+
 const config = getDefaultConfig({
   appName: 'SOLR - Somnia Asset & Experience Router',
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'default',
+  projectId: projectId,
   chains: [somniaChain],
-  ssr: true,
+  ssr: false, // Disabling SSR can fix WebSocket connection issues in dev
 })
 
 const queryClient = new QueryClient()
