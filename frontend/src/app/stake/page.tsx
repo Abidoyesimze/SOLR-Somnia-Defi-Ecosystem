@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ethers } from 'ethers'
 import { toast } from 'react-hot-toast'
-import Header from '../components/Header'
 import {
   Star,
   TrendingUp,
@@ -614,7 +613,6 @@ export default function IntegratedStakingInterface() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-pink-900">
-      <Header />
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
@@ -626,7 +624,7 @@ export default function IntegratedStakingInterface() {
             Higher tiers offer better rewards and longer lock periods.
           </p>
           
-          {!isConnected && (
+          {/* {!isConnected && (
             <motion.button
               onClick={connectWallet}
               className="mt-6 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white py-3 px-8 rounded-2xl font-semibold text-lg transition-all duration-200 flex items-center justify-center space-x-2 mx-auto"
@@ -636,7 +634,7 @@ export default function IntegratedStakingInterface() {
               <Wallet className="w-5 h-5" />
               <span>Connect Wallet to Start</span>
             </motion.button>
-          )}
+          )} */}
         </div>
 
         {/* Hero Stats */}

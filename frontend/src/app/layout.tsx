@@ -3,6 +3,9 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from './provider'
 import { Toaster } from 'react-hot-toast'
+import ProtectedRoute from './components/ProtectedRoutes'
+import Header from './components/Header'
+
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -37,9 +40,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Providers>
-          {children}
+          <Header />
+          <ProtectedRoute>
+            {children}
+          </ProtectedRoute>
           <Toaster 
-            position="top-right"
+            position="bottom-left"
             toastOptions={{
               duration: 4000,
               style: {

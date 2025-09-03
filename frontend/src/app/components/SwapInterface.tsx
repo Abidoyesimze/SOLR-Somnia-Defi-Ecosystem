@@ -1353,7 +1353,7 @@ export default function CompleteDEXInterface() {
               Somnia DEX
             </h1>
             <div className="flex items-center space-x-2">
-              {isConnected ? (
+              {/* {isConnected ? (
                 <div className="flex items-center space-x-2 bg-slate-800/50 px-3 py-2 rounded-xl border border-slate-700/50">
                   <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                   <span className="text-sm text-white font-medium">
@@ -1368,7 +1368,7 @@ export default function CompleteDEXInterface() {
                   <Wallet className="w-4 h-4 text-slate-400" />
                   <span className="text-sm text-slate-400">Connect</span>
                 </button>
-              )}
+              )} */}
               <button
                 onClick={() => setShowSettings(!showSettings)}
                 className="p-2 hover:bg-slate-700/50 rounded-xl transition-colors"

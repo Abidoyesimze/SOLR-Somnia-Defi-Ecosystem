@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ethers } from 'ethers'
 import { toast } from 'react-hot-toast'
-import Header from '../components/Header'
 import {
   TrendingUp,
   TrendingDown,
@@ -1102,7 +1101,6 @@ export default function IntegratedLendingInterface() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900">
-      <Header />
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Page Title */}
         <div className="text-center mb-8">
@@ -1114,7 +1112,7 @@ export default function IntegratedLendingInterface() {
             Competitive rates and secure lending markets.
           </p>
           
-          {!isConnected && (
+          {/* {!isConnected && (
             <motion.button
               onClick={connectWallet}
               className="mt-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white py-3 px-8 rounded-2xl font-semibold text-lg transition-all duration-200 flex items-center justify-center space-x-2 mx-auto"
@@ -1124,7 +1122,7 @@ export default function IntegratedLendingInterface() {
               <Wallet className="w-5 h-5" />
               <span>Connect Wallet to Start</span>
             </motion.button>
-          )}
+          )} */}
         </div>
 
         {/* Hero Stats */}
