@@ -29,5 +29,8 @@
   "dependencies": {
     "@openzeppelin/contracts": "^5.4.0",
     "dotenv": "^17.2.1"
+  },
+  "volta": {
+    "node": "24.7.0"
   }
 }

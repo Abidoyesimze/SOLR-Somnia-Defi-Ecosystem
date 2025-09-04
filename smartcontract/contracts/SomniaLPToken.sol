@@ -37,7 +37,10 @@ contract SomniaLPToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         uint256 amount,
         string memory pool
     ) external onlyAuthorizedMinter whenNotPaused nonReentrant {
-        require(to != address(0), "Cannot mint to zero address");
+        // Allow minting to zero address only for minimum liquidity lock (pool == "LOCK")
+        if (to == address(0)) {
+            require(keccak256(bytes(pool)) == keccak256(bytes("LOCK")), "Cannot mint to zero address except for LOCK");
+        }
         require(amount > 0, "Amount must be greater than 0");
         _mint(to, amount);
         emit LPTokenMinted(to, amount, pool);

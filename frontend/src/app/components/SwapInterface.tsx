@@ -74,7 +74,8 @@ export default function CompleteDEXInterface() {
   // Navigation state
   const [currentView, setCurrentView] = useState('swap') // 'swap', 'liquidity'
   const [liquidityTab, setLiquidityTab] = useState('add') // 'add', 'remove', 'pools'
-  const [isMounted, setIsMounted] = useState(false)
+  const [isClient, setIsClient] = useState(false)
+  const [hasMounted, setHasMounted] = useState(false)
 
   // Common state
   const [balances, setBalances] = useState<Record<string, string>>({})
@@ -381,8 +382,8 @@ export default function CompleteDEXInterface() {
       const amountOutWei = ethers.parseUnits(toAmount, toTokenData.decimals || 18)
       
       // Calculate minimum output with slippage
-      const slippageMultiplier = (100 - slippage) / 100
-      const amountOutMinWei = amountOutWei * BigInt(Math.floor(slippageMultiplier * 1000)) / BigInt(1000)
+      const slippageBps = BigInt(Math.floor(slippage * 100)) // Convert 0.5% to 50 bps
+      const amountOutMinWei = (amountOutWei * (BigInt(10000) - slippageBps)) / BigInt(10000)
       
       // Execute swap
       const ammContract = new ethers.Contract(SomniaAmmContract.address, AMM_ABI, signer)
@@ -435,8 +436,20 @@ export default function CompleteDEXInterface() {
       const token0Data = DEFI_TOKENS[token0 as keyof typeof DEFI_TOKENS]
       const token1Data = DEFI_TOKENS[token1 as keyof typeof DEFI_TOKENS]
       
+      // Debug logging
+      console.log('Token0:', token0, 'Token0Data:', token0Data)
+      console.log('Token1:', token1, 'Token1Data:', token1Data)
+      console.log('Token0 Address:', token0Data?.address)
+      console.log('Token1 Address:', token1Data?.address)
+      
       if (!token0Data?.address || !token1Data?.address) {
-        throw new Error('Invalid token addresses')
+        throw new Error(`Invalid token addresses - Token0: ${token0Data?.address}, Token1: ${token1Data?.address}`)
+      }
+      
+      // Validate addresses are not zero
+      if (token0Data.address === '0x0000000000000000000000000000000000000000' || 
+          token1Data.address === '0x0000000000000000000000000000000000000000') {
+        throw new Error('Cannot use zero address for tokens')
       }
       
       // Check and approve both tokens
@@ -448,9 +461,9 @@ export default function CompleteDEXInterface() {
       const amount1Wei = ethers.parseUnits(amount1, token1Data.decimals || 18)
       
       // Calculate minimum amounts with slippage
-      const slippageMultiplier = (100 - slippage) / 100
-      const amount0MinWei = amount0Wei * BigInt(Math.floor(slippageMultiplier * 1000)) / BigInt(1000)
-      const amount1MinWei = amount1Wei * BigInt(Math.floor(slippageMultiplier * 1000)) / BigInt(1000)
+      const slippageBps = BigInt(Math.floor(slippage * 100)) // Convert 0.5% to 50 bps
+      const amount0MinWei = (amount0Wei * (BigInt(10000) - slippageBps)) / BigInt(10000)
+      const amount1MinWei = (amount1Wei * (BigInt(10000) - slippageBps)) / BigInt(10000)
       
       const ammContract = new ethers.Contract(SomniaAmmContract.address, AMM_ABI, signer)
       
@@ -463,7 +476,65 @@ export default function CompleteDEXInterface() {
         toast.success('Pool created!')
       }
       
+      // Check if tokens are whitelisted
+      const token0Whitelisted = await ammContract.isTokenWhitelisted(token0Data.address)
+      const token1Whitelisted = await ammContract.isTokenWhitelisted(token1Data.address)
+      
+      console.log('Token0 whitelisted:', token0Whitelisted)
+      console.log('Token1 whitelisted:', token1Whitelisted)
+      
+      // Whitelist tokens if not already whitelisted (this might require owner privileges)
+      if (!token0Whitelisted) {
+        console.log('Attempting to whitelist token0...')
+        try {
+          const whitelistTx0 = await ammContract.whitelistToken(token0Data.address)
+          await whitelistTx0.wait()
+          console.log('Token0 whitelisted successfully')
+        } catch (error) {
+          console.log('Failed to whitelist token0 (might require owner privileges):', error)
+        }
+      }
+      
+      if (!token1Whitelisted) {
+        console.log('Attempting to whitelist token1...')
+        try {
+          const whitelistTx1 = await ammContract.whitelistToken(token1Data.address)
+          await whitelistTx1.wait()
+          console.log('Token1 whitelisted successfully')
+        } catch (error) {
+          console.log('Failed to whitelist token1 (might require owner privileges):', error)
+        }
+      }
+      
+      // Debug the contract call parameters
+      console.log('Contract call parameters:')
+      console.log('- Token0 Address:', token0Data.address)
+      console.log('- Token1 Address:', token1Data.address)
+      console.log('- Amount0Wei:', amount0Wei.toString())
+      console.log('- Amount1Wei:', amount1Wei.toString())
+      console.log('- Amount0MinWei:', amount0MinWei.toString())
+      console.log('- Amount1MinWei:', amount1MinWei.toString())
+      console.log('- User Address:', userAddress)
+      console.log('- Signer Address:', await signer.getAddress())
+      
       toast.loading('Adding liquidity...')
+      
+      // Try to estimate gas first to get a better error message
+      try {
+        const gasEstimate = await ammContract.addLiquidity.estimateGas(
+          token0Data.address,
+          token1Data.address,
+          amount0Wei,
+          amount1Wei,
+          amount0MinWei,
+          amount1MinWei
+        )
+        console.log('Gas estimate successful:', gasEstimate.toString())
+      } catch (gasError: any) {
+        console.error('Gas estimation failed:', gasError)
+        throw new Error(`Transaction will fail: ${gasError.reason || gasError.message}`)
+      }
+      
       const addTx = await ammContract.addLiquidity(
         token0Data.address,
         token1Data.address,
@@ -518,20 +589,25 @@ export default function CompleteDEXInterface() {
         throw new Error('Invalid token or LP token addresses')
       }
       
-      // Calculate liquidity to remove
-      const liquidityToRemove = (parseFloat(poolData.userLPBalance) * removePercentage / 100).toString()
-      const liquidityWei = ethers.parseUnits(liquidityToRemove, 18)
-      
+      // Calculate liquidity to remove using BigInt
+      const userLpBalanceWei = ethers.parseUnits(poolData.userLPBalance, 18)
+      const liquidityToRemoveWei = (userLpBalanceWei * BigInt(removePercentage)) / 100n
+      const liquidityToRemove = ethers.formatUnits(liquidityToRemoveWei, 18)
+
       // Approve LP token spending
       await checkAndApprove(poolData.lpTokenAddress, liquidityToRemove, 18)
-      
-      // Calculate minimum amounts (simplified)
-      const amount0Expected = (parseFloat(poolData.reserve0) * removePercentage / 100).toString()
-      const amount1Expected = (parseFloat(poolData.reserve1) * removePercentage / 100).toString()
-      
-      const slippageMultiplier = (100 - slippage) / 100
-      const amount0MinWei = ethers.parseUnits((parseFloat(amount0Expected) * slippageMultiplier).toString(), token0Data.decimals || 18)
-      const amount1MinWei = ethers.parseUnits((parseFloat(amount1Expected) * slippageMultiplier).toString(), token1Data.decimals || 18)
+
+      // Calculate expected amounts based on share of pool using BigInt
+      const totalLPSupplyWei = ethers.parseUnits(poolData.totalLPSupply, 18)
+      const reserve0Wei = ethers.parseUnits(poolData.reserve0, token0Data.decimals || 18)
+      const reserve1Wei = ethers.parseUnits(poolData.reserve1, token1Data.decimals || 18)
+
+      const amount0ExpectedWei = (reserve0Wei * liquidityToRemoveWei) / totalLPSupplyWei
+      const amount1ExpectedWei = (reserve1Wei * liquidityToRemoveWei) / totalLPSupplyWei
+
+      const slippageBps = BigInt(Math.floor(slippage * 100))
+      const amount0MinWei = (amount0ExpectedWei * (BigInt(10000) - slippageBps)) / BigInt(10000)
+      const amount1MinWei = (amount1ExpectedWei * (BigInt(10000) - slippageBps)) / BigInt(10000)
       
       const ammContract = new ethers.Contract(SomniaAmmContract.address, AMM_ABI, signer)
       
@@ -539,7 +615,7 @@ export default function CompleteDEXInterface() {
       const removeTx = await ammContract.removeLiquidity(
         token0Data.address,
         token1Data.address,
-        liquidityWei,
+        liquidityToRemoveWei,
         amount0MinWei,
         amount1MinWei
       )
@@ -640,22 +716,22 @@ export default function CompleteDEXInterface() {
 
   // Effects
   useEffect(() => {
-    if (isConnected && userAddress) {
+    if (isConnected && userAddress && hasMounted) {
       loadBalances()
       loadProtocolStats()
       loadUserPools()
     }
-  }, [isConnected, userAddress, loadBalances, loadProtocolStats, loadUserPools])
+  }, [isConnected, userAddress, loadBalances, loadProtocolStats, loadUserPools, hasMounted])
 
   useEffect(() => {
-    if (currentView === 'liquidity') {
+    if (currentView === 'liquidity' && hasMounted) {
       loadPoolData()
     }
-  }, [currentView, token0, token1, loadPoolData])
+  }, [currentView, token0, token1, loadPoolData, hasMounted])
 
   // Separate useEffect for swap calculations with better debouncing
   useEffect(() => {
-    if (currentView !== 'swap' || !fromAmount || parseFloat(fromAmount) <= 0) {
+    if (currentView !== 'swap' || !fromAmount || parseFloat(fromAmount) <= 0 || !hasMounted) {
       if (currentView === 'swap') {
         setToAmount('')
         setExchangeRate('0')
@@ -669,10 +745,11 @@ export default function CompleteDEXInterface() {
     }, 800) // Increased debounce time to reduce blinking
     
     return () => clearTimeout(timer)
-  }, [fromAmount, fromToken, toToken, currentView, calculateSwapOutput])
+  }, [fromAmount, fromToken, toToken, currentView, calculateSwapOutput, hasMounted])
 
   useEffect(() => {
-    setIsMounted(true)
+    setIsClient(true)
+    setHasMounted(true)
   }, [])
 
   // Check if user has sufficient balance
@@ -1235,7 +1312,7 @@ export default function CompleteDEXInterface() {
     </motion.div>
   )
 
-  if (!isMounted) {
+  if (!hasMounted) {
     return <LoadingSkeleton />;
   }
 
