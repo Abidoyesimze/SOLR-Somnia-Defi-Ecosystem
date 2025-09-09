@@ -19,6 +19,7 @@ import {
   RefreshCw,
   ExternalLink
 } from 'lucide-react'
+import TransactionHistory from './TransactionHistory'
 
 // Import your constants and contracts
 import { DEFI_TOKENS, CONTRACTS, SOMNIA_CONFIG } from '../lib/constants'
@@ -65,7 +66,9 @@ const ERC20_ABI = [
   "function name() view returns (string)",
   "function allowance(address owner, address spender) view returns (uint256)",
   "function approve(address spender, uint256 amount) returns (bool)",
-  "function transfer(address to, uint256 amount) returns (bool)"
+  "function transfer(address to, uint256 amount) returns (bool)",
+  "event Approval(address indexed owner, address indexed spender, uint256 value)",
+  "event Transfer(address indexed from, address indexed to, uint256 value)"
 ]
 
 export default function CompleteDEXInterface() {
@@ -448,6 +451,13 @@ export default function CompleteDEXInterface() {
     try {
       setSwapping(true)
       
+      const txHash = ''; // Will be updated with actual hash
+      useStore.getState().addTransaction({
+        hash: txHash,
+        description: `Swap ${fromAmount} ${fromToken} → ${toAmount} ${toToken}`,
+        status: 'pending'
+      });
+      
       const fromTokenData = DEFI_TOKENS[fromToken as keyof typeof DEFI_TOKENS]
       const toTokenData = DEFI_TOKENS[toToken as keyof typeof DEFI_TOKENS]
       
@@ -477,9 +487,13 @@ export default function CompleteDEXInterface() {
         amountOutMinWei
       )
       
+      useStore.getState().updateTransaction(swapTx.hash, 'pending');
+      
       toast.dismiss()
       toast.loading('Confirming transaction...')
       const receipt = await swapTx.wait()
+      
+      useStore.getState().updateTransaction(swapTx.hash, 'success');
       
       toast.dismiss()
       toast.success(`Successfully swapped ${fromAmount} ${fromToken} for ${toAmount} ${toToken}!`)
@@ -493,6 +507,8 @@ export default function CompleteDEXInterface() {
     } catch (error: any) {
       console.error('Swap failed:', error)
       toast.dismiss()
+      
+      useStore.getState().updateTransaction(error.transactionHash, 'failed');
       
       if (error.code === 'ACTION_REJECTED') {
         toast.error('Transaction cancelled by user')
@@ -512,6 +528,13 @@ export default function CompleteDEXInterface() {
     
     try {
       setLoading(true)
+      
+      const txHash = ''; // Will be updated with actual hash
+      useStore.getState().addTransaction({
+        hash: txHash,
+        description: `Add liquidity ${amount0} ${token0} + ${amount1} ${token1}`,
+        status: 'pending'
+      });
       
       const token0Data = DEFI_TOKENS[token0 as keyof typeof DEFI_TOKENS]
       const token1Data = DEFI_TOKENS[token1 as keyof typeof DEFI_TOKENS]
@@ -554,9 +577,13 @@ export default function CompleteDEXInterface() {
         amount1MinWei
       )
       
+      useStore.getState().updateTransaction(addTx.hash, 'pending');
+      
       toast.dismiss()
       toast.loading('Confirming transaction...')
       await addTx.wait()
+      
+      useStore.getState().updateTransaction(addTx.hash, 'success');
       
       toast.dismiss()
       toast.success('Liquidity added successfully!')
@@ -571,6 +598,8 @@ export default function CompleteDEXInterface() {
     } catch (error: any) {
       console.error('Add liquidity failed:', error)
       toast.dismiss()
+      
+      useStore.getState().updateTransaction(error.transactionHash, 'failed');
       
       if (error.code === 'ACTION_REJECTED') {
         toast.error('Transaction cancelled by user')
@@ -590,6 +619,13 @@ export default function CompleteDEXInterface() {
     
     try {
       setLoading(true)
+      
+      const txHash = ''; // Will be updated with actual hash
+      useStore.getState().addTransaction({
+        hash: txHash,
+        description: `Remove liquidity ${removePercentage}% ${token0}/${token1}`,
+        status: 'pending'
+      });
       
       const token0Data = DEFI_TOKENS[token0 as keyof typeof DEFI_TOKENS]
       const token1Data = DEFI_TOKENS[token1 as keyof typeof DEFI_TOKENS]
@@ -624,9 +660,13 @@ export default function CompleteDEXInterface() {
         amount1MinWei
       )
       
+      useStore.getState().updateTransaction(removeTx.hash, 'pending');
+      
       toast.dismiss()
       toast.loading('Confirming transaction...')
       await removeTx.wait()
+      
+      useStore.getState().updateTransaction(removeTx.hash, 'success');
       
       toast.dismiss()
       toast.success('Liquidity removed successfully!')
@@ -640,6 +680,8 @@ export default function CompleteDEXInterface() {
     } catch (error: any) {
       console.error('Remove liquidity failed:', error)
       toast.dismiss()
+      
+      useStore.getState().updateTransaction(error.transactionHash, 'failed');
       
       if (error.code === 'ACTION_REJECTED') {
         toast.error('Transaction cancelled by user')
@@ -1339,205 +1381,10 @@ export default function CompleteDEXInterface() {
   )
 
   return (
-    <div className="max-w-lg mx-auto">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="bg-slate-900/90 backdrop-blur-xl rounded-3xl border border-slate-700/50 overflow-hidden shadow-2xl"
-      >
-        {/* Header */}
-        <div className="p-6 border-b border-slate-700/50">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Somnia DEX
-            </h1>
-            <div className="flex items-center space-x-2">
-              {isConnected ? (
-                <div className="flex items-center space-x-2 bg-slate-800/50 px-3 py-2 rounded-xl border border-slate-700/50">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span className="text-sm text-white font-medium">
-                    {userAddress.slice(0, 6)}...{userAddress.slice(-4)}
-                  </span>
-                </div>
-              ) : (
-                <button
-                  onClick={connectWallet}
-                  className="flex items-center space-x-2 bg-slate-800/50 hover:bg-slate-700/50 px-3 py-2 rounded-xl border border-slate-700/50 transition-colors"
-                >
-                  <Wallet className="w-4 h-4 text-slate-400" />
-                  <span className="text-sm text-slate-400">Connect</span>
-                </button>
-              )}
-              <button
-                onClick={() => setShowSettings(!showSettings)}
-                className="p-2 hover:bg-slate-700/50 rounded-xl transition-colors"
-              >
-                <Settings className="w-5 h-5 text-slate-400" />
-              </button>
-            </div>
-          </div>
-
-          <NavigationTabs />
-        </div>
-
-        {/* Settings Panel */}
-        <AnimatePresence>
-          {showSettings && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="px-6 py-4 bg-slate-800/30 border-b border-slate-700/30"
-            >
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-slate-400 mb-2 block">Slippage Tolerance</label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="number"
-                      value={slippage}
-                      onChange={(e) => setSlippage(parseFloat(e.target.value) || 0.5)}
-                      step="0.1"
-                      min="0.1"
-                      max="50"
-                      className="flex-1 bg-slate-700 text-white px-3 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
-                    />
-                    <span className="text-white">%</span>
-                  </div>
-                  <div className="flex space-x-2 mt-2">
-                    {[0.1, 0.5, 1.0].map((value) => (
-                      <button
-                        key={value}
-                        onClick={() => setSlippage(value)}
-                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                          slippage === value 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                        }`}
-                      >
-                        {value}%
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {currentView === 'liquidity' && (
-                  <div>
-                    <label className="text-sm font-medium text-slate-400 mb-2 block">Transaction Deadline</label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="number"
-                        value={deadline}
-                        onChange={(e) => setDeadline(parseInt(e.target.value) || 20)}
-                        min="1"
-                        max="180"
-                        className="flex-1 bg-slate-700 text-white px-3 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
-                      />
-                      <span className="text-white">min</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Main Content */}
-        <div className="p-6">
-          <AnimatePresence mode="wait">
-            {currentView === 'swap' && <SwapInterface />}
-            {currentView === 'liquidity' && (
-              <div className="space-y-4">
-                <LiquidityTabs />
-                <AnimatePresence mode="wait">
-                  {liquidityTab === 'add' && <AddLiquidityTab />}
-                  {liquidityTab === 'remove' && <RemoveLiquidityTab />}
-                  {liquidityTab === 'pools' && <PoolsTab />}
-                </AnimatePresence>
-              </div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Info Section */}
-        <div className="p-6 pt-0">
-          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-2xl p-4">
-            <div className="flex items-start space-x-3">
-              <Info className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-blue-300">
-                <p className="font-medium mb-1">
-                  {currentView === 'swap' ? 'Instant Token Swaps' : 'Liquidity Provider Rewards'}
-                </p>
-                <p>
-                  {currentView === 'swap' 
-                    ? 'Trade tokens instantly with minimal slippage and low fees on Somnia\'s high-performance blockchain.' 
-                    : 'Earn 0.20% of all trades proportional to your share of the pool. Fees are automatically compounded into your position.'
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        {currentView === 'swap' && protocolStats && (
-          <div className="p-6 pt-0">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-3 bg-slate-800/30 rounded-xl">
-                <div className="text-lg font-bold text-white">
-                  {parseFloat(protocolStats.totalVolume) > 0 ? `$${parseFloat(protocolStats.totalVolume).toFixed(1)}M` : 'No Data'}
-                </div>
-                <div className="text-xs text-slate-400">24h Volume</div>
-              </div>
-              <div className="text-center p-3 bg-slate-800/30 rounded-xl">
-                <div className="text-lg font-bold text-white">
-                  {parseFloat(protocolStats.totalTVL || '0') > 0 ? `$${parseFloat(protocolStats.totalTVL || '0').toFixed(1)}M` : 'No Data'}
-                </div>
-                <div className="text-xs text-slate-400">Total TVL</div>
-              </div>
-              <div className="text-center p-3 bg-slate-800/30 rounded-xl">
-                <div className="text-lg font-bold text-white">0.3%</div>
-                <div className="text-xs text-slate-400">Trading Fee</div>
-              </div>
-            </div>
-          </div>
-        )}
-      </motion.div>
-
-      <style jsx>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-          cursor: pointer;
-          border: 2px solid #1e293b;
-          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-          transition: all 0.2s ease;
-        }
-        
-        .slider::-webkit-slider-thumb:hover {
-          transform: scale(1.1);
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
-        }
-        
-        .slider::-moz-range-thumb {
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-          cursor: pointer;
-          border: 2px solid #1e293b;
-          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-        }
-        
-        .slider::-webkit-slider-track {
-          height: 8px;
-          border-radius: 4px;
-          background: linear-gradient(90deg, #1e293b 0%, #3b82f6 var(--percentage, 25%), #1e293b var(--percentage, 25%));
-        }
-      `}</style>
+    <div className="max-w-2xl mx-auto">
+      {/* Existing swap/liquidity UI */}
+      
+      <TransactionHistory />
     </div>
   )
 }
